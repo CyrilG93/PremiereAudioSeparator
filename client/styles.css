@@ -105,28 +105,176 @@ header h1 {
 }
 
 .language-selector {
+    position: relative;
     flex-shrink: 0;
 }
 
 .language-selector select {
+    display: none;
+}
+
+.language-button {
+    align-items: center;
     background: var(--bg-secondary);
-    color: var(--text-primary);
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 6px 10px;
-    font-size: 12px;
+    color: var(--text-primary);
     cursor: pointer;
+    display: flex;
+    font-size: 12px;
+    gap: 7px;
+    min-width: 154px;
+    padding: 6px 10px;
     transition: all 0.2s ease;
 }
 
-.language-selector select:hover {
+.language-button:hover {
     border-color: var(--accent-primary);
 }
 
-.language-selector select:focus {
+.language-button:focus {
     outline: none;
     border-color: var(--accent-primary);
     box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+}
+
+.language-arrow {
+    color: var(--text-secondary);
+    margin-left: auto;
+}
+
+.language-menu {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: 0 8px 18px var(--shadow);
+    display: none;
+    min-width: 190px;
+    overflow: hidden;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 20;
+}
+
+.language-selector.is-open .language-menu {
+    display: block;
+}
+
+.language-menu button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    font-size: 12px;
+    gap: 8px;
+    padding: 8px 10px;
+    text-align: left;
+    width: 100%;
+}
+
+.language-menu button:hover,
+.language-menu button.is-selected {
+    background: var(--bg-tertiary);
+}
+
+.language-flag {
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+    height: 12px;
+    overflow: hidden;
+    position: relative;
+    width: 18px;
+}
+
+.flag-de {
+    background: linear-gradient(#000 0 33%, #dd0000 33% 66%, #ffce00 66%);
+}
+
+.flag-es {
+    background: linear-gradient(#aa151b 0 25%, #f1bf00 25% 75%, #aa151b 75%);
+}
+
+.flag-fr {
+    background: linear-gradient(90deg, #0055a4 0 33%, #fff 33% 66%, #ef4135 66%);
+}
+
+.flag-it {
+    background: linear-gradient(90deg, #009246 0 33%, #fff 33% 66%, #ce2b37 66%);
+}
+
+.flag-gb {
+    background:
+        linear-gradient(33deg, transparent 42%, #fff 42% 48%, #c8102e 48% 52%, #fff 52% 58%, transparent 58%),
+        linear-gradient(-33deg, transparent 42%, #fff 42% 48%, #c8102e 48% 52%, #fff 52% 58%, transparent 58%),
+        linear-gradient(90deg, transparent 43%, #fff 43% 57%, transparent 57%),
+        linear-gradient(0deg, transparent 36%, #fff 36% 64%, transparent 64%),
+        linear-gradient(90deg, transparent 47%, #c8102e 47% 53%, transparent 53%),
+        linear-gradient(0deg, transparent 43%, #c8102e 43% 57%, transparent 57%),
+        #012169;
+}
+
+.flag-ru {
+    background: linear-gradient(#fff 0 33%, #0039a6 33% 66%, #d52b1e 66%);
+}
+
+.flag-br {
+    background: #009739;
+}
+
+.flag-br::before {
+    background: #ffdf00;
+    content: "";
+    height: 8px;
+    left: 4px;
+    position: absolute;
+    top: 2px;
+    transform: rotate(45deg);
+    width: 10px;
+}
+
+.flag-br::after {
+    background: #002776;
+    border-radius: 50%;
+    content: "";
+    height: 5px;
+    left: 6px;
+    position: absolute;
+    top: 4px;
+    width: 6px;
+}
+
+.flag-cn {
+    background: #de2910;
+}
+
+.flag-cn::before {
+    color: #ffde00;
+    content: "★";
+    font-size: 7px;
+    left: 2px;
+    line-height: 1;
+    position: absolute;
+    top: 1px;
+}
+
+.flag-jp {
+    background: #fff;
+}
+
+.flag-jp::before {
+    background: #bc002d;
+    border-radius: 50%;
+    content: "";
+    height: 6px;
+    left: 5px;
+    position: absolute;
+    top: 3px;
+    width: 6px;
 }
 
 main {

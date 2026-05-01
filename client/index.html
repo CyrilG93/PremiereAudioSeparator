@@ -15,22 +15,57 @@
                 <div class="title-section">
                     <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
                         <h1 id="appTitle">🎵 Audio Separator</h1>
-                        <span id="versionInfo" class="version-badge">v2.4.0</span>
+                        <span id="versionInfo" class="version-badge">v2.4.1</span>
                     </div>
                     <p class="subtitle" id="appSubtitle">Séparez voix et instruments</p>
                 </div>
                 <div class="language-selector">
-                    <select id="languageSelect">
-                        <option value="de">🇩🇪 Deutsch</option>
-                        <option value="en" selected>🇬🇧 English</option>
-                        <option value="es">🇪🇸 Español</option>
-                        <option value="fr">🇫🇷 Français</option>
-                        <option value="it">🇮🇹 Italiano</option>
-                        <option value="pt-BR">🇧🇷 Português (Brasil)</option>
-                        <option value="ru">🇷🇺 Русский</option>
-                        <option value="zh-CN">🇨🇳 中文 (简体)</option>
-                        <option value="ja">🇯🇵 日本語</option>
+                    <select id="languageSelect" aria-hidden="true" tabindex="-1">
+                        <option value="de" data-flag="de">Deutsch</option>
+                        <option value="en" data-flag="gb" selected>English</option>
+                        <option value="es" data-flag="es">Español</option>
+                        <option value="fr" data-flag="fr">Français</option>
+                        <option value="it" data-flag="it">Italiano</option>
+                        <option value="pt-BR" data-flag="br">Português (Brasil)</option>
+                        <option value="ru" data-flag="ru">Русский</option>
+                        <option value="zh-CN" data-flag="cn">中文 (简体)</option>
+                        <option value="ja" data-flag="jp">日本語</option>
                     </select>
+                    <button id="languageButton" class="language-button" type="button" aria-haspopup="listbox"
+                        aria-expanded="false">
+                        <span id="languageFlag" class="language-flag flag-gb"></span>
+                        <span id="languageName">English</span>
+                        <span class="language-arrow">▾</span>
+                    </button>
+                    <div id="languageMenu" class="language-menu" role="listbox">
+                        <button type="button" role="option" data-lang="de" data-flag="de">
+                            <span class="language-flag flag-de"></span><span>Deutsch</span>
+                        </button>
+                        <button type="button" role="option" data-lang="en" data-flag="gb">
+                            <span class="language-flag flag-gb"></span><span>English</span>
+                        </button>
+                        <button type="button" role="option" data-lang="es" data-flag="es">
+                            <span class="language-flag flag-es"></span><span>Español</span>
+                        </button>
+                        <button type="button" role="option" data-lang="fr" data-flag="fr">
+                            <span class="language-flag flag-fr"></span><span>Français</span>
+                        </button>
+                        <button type="button" role="option" data-lang="it" data-flag="it">
+                            <span class="language-flag flag-it"></span><span>Italiano</span>
+                        </button>
+                        <button type="button" role="option" data-lang="pt-BR" data-flag="br">
+                            <span class="language-flag flag-br"></span><span>Português (Brasil)</span>
+                        </button>
+                        <button type="button" role="option" data-lang="ru" data-flag="ru">
+                            <span class="language-flag flag-ru"></span><span>Русский</span>
+                        </button>
+                        <button type="button" role="option" data-lang="zh-CN" data-flag="cn">
+                            <span class="language-flag flag-cn"></span><span>中文 (简体)</span>
+                        </button>
+                        <button type="button" role="option" data-lang="ja" data-flag="jp">
+                            <span class="language-flag flag-jp"></span><span>日本語</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 

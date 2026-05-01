@@ -1,4 +1,4 @@
-# 🎵 Audio Separator v2.4.0 - Premiere Pro Plugin
+# 🎵 Audio Separator v2.4.1 - Premiere Pro Plugin
 
 Professional plugin to separate audio tracks into stems (vocals, instrumental, drums, bass) directly in Adobe Premiere Pro, powered by Demucs AI.
 
@@ -15,7 +15,7 @@ Professional plugin to separate audio tracks into stems (vocals, instrumental, d
 *   **Performance**: Choose between Fast (Quantized), Balanced, or Quality.
 *   **GPU Support**: Auto-detects NVIDIA CUDA or Apple Silicon (MPS).
 *   **Formats**: MP3, WAV, FLAC.
-*   **Premiere Pro**: Auto-import to project, localized UI (Chinese Simplified, English, French, German, Italian, Japanese, Portuguese-BR, Russian, Spanish).
+*   **Premiere Pro**: Auto-import to project, localized UI and alerts (Chinese Simplified, English, French, German, Italian, Japanese, Portuguese-BR, Russian, Spanish).
 
 ---
 
@@ -143,5 +143,5 @@ Allez dans **Fenêtre** > **Extensions** > **Audio Separator**
 
 ---
 
-**Version**: 2.4.0
+**Version**: 2.4.1
 **Auteur**: Cyril V

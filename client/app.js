@@ -11,7 +11,7 @@
     let originalProjectItem = null;
 
     const GITHUB_REPO = 'CyrilG93/PremierePro-AudioSeparator';
-    let CURRENT_VERSION = '2.4.0'; // Will be updated from manifest
+    let CURRENT_VERSION = '2.4.1'; // Will be updated from manifest
 
     // Language management - Default to English on first launch
     window.currentLanguage = localStorage.getItem('preferredLanguage') || 'en';
@@ -19,6 +19,10 @@
     // DOM Elements
     const elements = {
         languageSelect: document.getElementById('languageSelect'),
+        languageButton: document.getElementById('languageButton'),
+        languageMenu: document.getElementById('languageMenu'),
+        languageFlag: document.getElementById('languageFlag'),
+        languageName: document.getElementById('languageName'),
         appTitle: document.getElementById('appTitle'),
         appSubtitle: document.getElementById('appSubtitle'),
         selectBtn: document.getElementById('selectBtn'),
@@ -63,9 +67,12 @@
      * Load language translations
      */
     function loadLanguage(lang) {
-        window.currentLanguage = lang;
+        const activeLang = translations[lang] ? lang : 'en';
+        window.currentLanguage = activeLang;
         // Fallback to English if an unsupported language code is stored in preferences.
-        const tr = translations[lang] || translations.en;
+        const tr = translations[activeLang] || translations.en;
+        elements.languageSelect.value = activeLang;
+        updateLanguageDropdown(activeLang);
 
         // Update header
         elements.appTitle.textContent = tr.title;
@@ -169,7 +176,7 @@
         if (versionElement) versionElement.textContent = tr.version + ' | ' + tr.poweredBy;
 
         // Save preference
-        localStorage.setItem('preferredLanguage', lang);
+        localStorage.setItem('preferredLanguage', activeLang);
     }
 
     /**
@@ -179,10 +186,10 @@
         Utils.log('Audio Separator extension initialized');
 
         // Load saved language
+        setupLanguageDropdown();
         elements.languageSelect.value = window.currentLanguage;
         loadLanguage(window.currentLanguage);
 
-        setupEventListeners();
         setupEventListeners();
         checkPythonEnvironment();
 
@@ -220,6 +227,80 @@
         elements.exportDrums.addEventListener('change', updateSeparateButton);
         elements.exportBass.addEventListener('change', updateSeparateButton);
         elements.exportOther.addEventListener('change', updateSeparateButton);
+    }
+
+    /**
+     * Setup custom language dropdown
+     */
+    function setupLanguageDropdown() {
+        if (!elements.languageButton || !elements.languageMenu) return;
+
+        // Toggle the custom menu because native Windows selects do not render flag emojis reliably.
+        elements.languageButton.addEventListener('click', function (event) {
+            event.stopPropagation();
+            const isOpen = elements.languageButton.getAttribute('aria-expanded') === 'true';
+            setLanguageMenuOpen(!isOpen);
+        });
+
+        // Apply the selected language from custom menu items.
+        const menuItems = elements.languageMenu.querySelectorAll('button[data-lang]');
+        menuItems.forEach(function (item) {
+            item.addEventListener('click', function () {
+                const lang = item.getAttribute('data-lang');
+                elements.languageSelect.value = lang;
+                loadLanguage(lang);
+                setLanguageMenuOpen(false);
+            });
+        });
+
+        // Close the menu when the user clicks outside the selector.
+        document.addEventListener('click', function () {
+            setLanguageMenuOpen(false);
+        });
+
+        // Close the menu with Escape for keyboard users.
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                setLanguageMenuOpen(false);
+            }
+        });
+    }
+
+    /**
+     * Show or hide the custom language menu
+     */
+    function setLanguageMenuOpen(isOpen) {
+        const selector = document.querySelector('.language-selector');
+        if (!selector || !elements.languageButton) return;
+
+        // Keep the visual state and accessibility state in sync.
+        selector.classList.toggle('is-open', isOpen);
+        elements.languageButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    /**
+     * Update custom language dropdown display
+     */
+    function updateLanguageDropdown(lang) {
+        if (!elements.languageSelect || !elements.languageFlag || !elements.languageName) return;
+
+        // Read language metadata from the hidden native select to keep one source of truth.
+        const selectedOption = elements.languageSelect.querySelector('option[value="' + lang + '"]') ||
+            elements.languageSelect.querySelector('option[value="en"]');
+        const flagCode = selectedOption ? selectedOption.getAttribute('data-flag') : 'gb';
+        const languageName = selectedOption ? selectedOption.textContent : 'English';
+
+        elements.languageFlag.className = 'language-flag flag-' + flagCode;
+        elements.languageName.textContent = languageName;
+
+        // Mark the active option in the custom menu.
+        if (elements.languageMenu) {
+            const menuItems = elements.languageMenu.querySelectorAll('button[data-lang]');
+            menuItems.forEach(function (item) {
+                item.classList.toggle('is-selected', item.getAttribute('data-lang') === lang);
+                item.setAttribute('aria-selected', item.getAttribute('data-lang') === lang ? 'true' : 'false');
+            });
+        }
     }
 
     /**
@@ -287,7 +368,7 @@
             const status = JSON.parse(result);
             if (!status.success) {
                 Utils.showNotification(
-                    'Python ou Demucs n\'est pas installé. Veuillez consulter la documentation pour l\'installation.',
+                    t('pythonMissing'),
                     'warning'
                 );
             }
@@ -313,13 +394,13 @@
                     Utils.log('Clip selected: ' + clipData.name + ' (Dossier: ' + clipData.parentBinName + ')');
                 } else {
                     Utils.showNotification(
-                        'Veuillez sélectionner un clip audio dans la timeline.',
+                        t('selectTimelineAudioClip'),
                         'error'
                     );
                 }
             } catch (e) {
                 Utils.log('Error parsing clip data: ' + e.message, 'error');
-                Utils.showNotification('Erreur lors de la sélection du clip.', 'error');
+                Utils.showNotification(t('clipSelectionError'), 'error');
             }
         });
     }
@@ -329,7 +410,7 @@
      */
     function separateAudio() {
         if (!selectedClip) {
-            Utils.showNotification('Aucun clip sélectionné.', 'error');
+            Utils.showNotification(t('noClipSelected'), 'error');
             return;
         }
 
@@ -352,9 +433,10 @@
             startSeparation(outputPath);
         } else {
             // Ask user for output directory
-            csInterface.evalScript('Folder.selectDialog("Sélectionnez le dossier de sortie").fsName', function (result) {
+            const outputDialogScript = 'var folder = Folder.selectDialog(' + JSON.stringify(t('outputFolderDialogTitle')) + '); folder ? folder.fsName : null;';
+            csInterface.evalScript(outputDialogScript, function (result) {
                 if (!result || result === 'null') {
-                    handleSeparationError('Aucun dossier sélectionné');
+                    handleSeparationError(t('noOutputFolderSelected'));
                     return;
                 }
                 outputPath = result;
@@ -442,13 +524,13 @@
                 throw new Error('Config file not found');
             }
         } catch (e) {
-            Utils.showNotification('Configuration manquante. Veuillez réinstaller le plugin.', 'error');
-            addLogMessage('❌ Erreur: config.json introuvable. Veuillez exécuter le script d\'installation.');
+            Utils.showNotification(t('configMissing'), 'error');
+            addLogMessage('❌ ' + t('configMissingLog'));
             return;
         }
 
         if (!config.pythonPath) {
-            Utils.showNotification('Chemin Python non configuré.', 'error');
+            Utils.showNotification(t('pythonPathMissing'), 'error');
             return;
         }
 
@@ -615,7 +697,7 @@
                 });
 
                 if (songFolders.length === 0) {
-                    handleSeparationError('Aucun fichier généré');
+                    handleSeparationError(t('generatedFilesMissing'));
                     return;
                 }
 
@@ -716,7 +798,7 @@
                                 type: fileType
                             });
                         } catch (err) {
-                            addLogMessage('   ⚠️ Erreur de renommage: ' + err.message);
+                            addLogMessage('   ⚠️ ' + t('renameError') + ' ' + err.message);
                             addLogMessage('   Code: ' + err.code);
                             // Keep original file
                             resultFiles.push({
@@ -756,7 +838,7 @@
                     outputPath: outputPath
                 });
             } catch (e) {
-                handleSeparationError('Erreur lors de la recherche des fichiers: ' + e.message);
+                handleSeparationError(t('fileSearchError') + ' ' + e.message);
             }
         });
     }
@@ -1027,10 +1109,10 @@
      */
     function handleSeparationError(error) {
         stopTimer();
-        updateProgress(0, 'Erreur lors de la séparation');
-        addLogMessage('❌ Erreur: ' + error);
+        updateProgress(0, t('separationErrorStatus'));
+        addLogMessage('❌ ' + t('errorPrefix') + ' ' + error);
 
-        Utils.showNotification('Erreur: ' + error, 'error');
+        Utils.showNotification(t('errorPrefix') + ' ' + error, 'error');
 
         // Re-enable buttons
         elements.selectBtn.disabled = false;
@@ -1044,7 +1126,7 @@
      */
     function importToProject() {
         if (separatedFiles.length === 0) {
-            Utils.showNotification('Aucun fichier à importer.', 'error');
+            Utils.showNotification(t('noFilesToImport'), 'error');
             return;
         }
 
@@ -1058,8 +1140,8 @@
         csInterface.evalScript(`AudioSeparator_importFiles("${filesJsonStr}", "${originalMediaPath}")`, function (result) {
             try {
                 if (!result || result === 'undefined' || result === 'null') {
-                    addLogMessage('⚠️ Aucune réponse du serveur ExtendScript');
-                    Utils.showNotification('Erreur lors de l\'importation', 'error');
+                    addLogMessage('⚠️ ' + t('extendScriptNoResponse'));
+                    Utils.showNotification(t('importError'), 'error');
                     elements.importBtn.disabled = false;
                     return;
                 }
@@ -1072,10 +1154,11 @@
                     // Hide import button after successful import
                     elements.importBtn.style.display = 'none';
                 } else {
-                    addLogMessage('❌ Erreur d\'importation: ' + response.error);
+                    addLogMessage('❌ ' + t('importErrorPrefix') + ' ' + response.error);
+                    Utils.showNotification(t('importError'), 'error');
                 }
             } catch (e) {
-                addLogMessage('❌ Erreur: ' + e.message);
+                addLogMessage('❌ ' + t('errorPrefix') + ' ' + e.message);
             }
             elements.importBtn.disabled = false;
         });
