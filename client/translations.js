@@ -136,7 +136,7 @@ window.translations = {
         renameError: "Erreur de renommage:",
 
         // Footer
-        version: "v2.4.1 - Robust",
+        version: "v2.4.2 - Robust",
         poweredBy: "Propulsé par Demucs AI"
     },
 
@@ -271,7 +271,7 @@ window.translations = {
         renameError: "Rename error:",
 
         // Footer
-        version: "v2.4.1 - Robust",
+        version: "v2.4.2 - Robust",
         poweredBy: "Powered by Demucs AI"
     }
 };

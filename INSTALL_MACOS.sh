@@ -1,18 +1,21 @@
 #!/bin/bash
 # Audio Separator for Premiere Pro - macOS Installer
-# Version 2.4.1
+# Version 2.4.2
 
 echo ""
 echo "========================================"
 echo "Audio Separator for Premiere Pro"
-echo "Installation Package v2.4.1 - macOS"
+echo "Installation Package v2.4.2 - macOS"
 echo "========================================"
 echo ""
 
 # Get script directory
 SOURCE_DIR="$(cd "$(dirname "$0")" && pwd)"
-EXTENSION_PATH="/Library/Application Support/Adobe/CEP/extensions/PremierePro-AudioSeparator"
+EXTENSION_PATH="$HOME/Library/Application Support/Adobe/CEP/extensions/PremierePro-AudioSeparator"
+SYSTEM_EXTENSION_PATH="/Library/Application Support/Adobe/CEP/extensions/PremierePro-AudioSeparator"
 CONFIG_FILE="$EXTENSION_PATH/config.json"
+VENV_PATH="$EXTENSION_PATH/.venv"
+RUNTIME_PYTHON_PATH="$VENV_PATH/bin/python"
 
 echo "Source directory: $SOURCE_DIR"
 echo "Target directory: $EXTENSION_PATH"
@@ -21,15 +24,12 @@ echo ""
 # Ensure the dependency updater is executable when launched from the extracted folder.
 [ -f "$SOURCE_DIR/UPDATE_DEPENDENCIES.sh" ] && chmod +x "$SOURCE_DIR/UPDATE_DEPENDENCIES.sh"
 
-# Check for sudo and auto-elevate if needed
-if [ "$EUID" -ne 0 ]; then
-    echo "This script requires administrator privileges."
-    echo "Requesting sudo access..."
-    sudo "$0" "$@"
-    exit $?
+echo "[OK] Installing for current user; administrator privileges are not required."
+if [ -d "$SYSTEM_EXTENSION_PATH" ]; then
+    echo "[INFO] A system-wide install also exists at:"
+    echo "       $SYSTEM_EXTENSION_PATH"
+    echo "       Remove it manually only if Premiere Pro shows duplicate extensions."
 fi
-
-echo "[OK] Running with appropriate permissions"
 echo ""
 
 echo "========================================"
@@ -123,11 +123,27 @@ echo "Step 3/5: Installing Demucs"
 echo "========================================"
 echo ""
 
-echo "Installing/Updating Demucs using $PYTHON_PATH..."
-"$PYTHON_PATH" -m pip install -U demucs --quiet
+# Create the user-owned extension directory before creating the Python runtime inside it.
+mkdir -p "$EXTENSION_PATH"
+
+# Keep Demucs isolated from system Python so the installer does not need admin rights.
+if [ ! -x "$RUNTIME_PYTHON_PATH" ]; then
+    echo "Creating local Python environment..."
+    "$PYTHON_PATH" -m venv "$VENV_PATH"
+
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] Failed to create the local Python environment."
+        exit 1
+    fi
+fi
+
+echo "Installing/Updating Demucs using local Python..."
+"$RUNTIME_PYTHON_PATH" -m pip install --upgrade pip --quiet
+"$RUNTIME_PYTHON_PATH" -m pip install -U demucs --quiet
 
 if [ $? -eq 0 ]; then
     echo "[OK] Demucs installed successfully."
+    echo "     Runtime Python: $RUNTIME_PYTHON_PATH"
 else
     echo "[ERROR] Failed to install Demucs."
     echo "Please check your internet connection or Python permissions."
@@ -139,12 +155,6 @@ echo "========================================"
 echo "Step 4/5: Installing Extension Files"
 echo "========================================"
 echo ""
-
-# Create extension directory
-if [ ! -d "$EXTENSION_PATH" ]; then
-    echo "Creating extension directory..."
-    mkdir -p "$EXTENSION_PATH"
-fi
 
 # Copy files
 echo "Copying extension files..."
@@ -169,9 +179,6 @@ cp -R "$SOURCE_DIR/CSXS" "$EXTENSION_PATH/"
 echo "Fixing permissions..."
 chmod -R 755 "$EXTENSION_PATH"
 [ -f "$EXTENSION_PATH/UPDATE_DEPENDENCIES.sh" ] && chmod +x "$EXTENSION_PATH/UPDATE_DEPENDENCIES.sh"
-if [ -n "$SUDO_USER" ]; then
-    chown -R "$SUDO_USER:staff" "$EXTENSION_PATH"
-fi
 
 echo "[OK] Extension files installed."
 echo ""
@@ -196,30 +203,28 @@ echo "Generating config.json..."
 
 # Create clean JSON content
 JSON_CONTENT="{"
-JSON_CONTENT="$JSON_CONTENT\"pythonPath\": \"$PYTHON_PATH\","
+JSON_CONTENT="$JSON_CONTENT\"pythonPath\": \"$RUNTIME_PYTHON_PATH\","
 JSON_CONTENT="$JSON_CONTENT\"ffmpegPath\": \"$FFMPEG_PATH\""
 JSON_CONTENT="$JSON_CONTENT}"
 
 # Remove existing config if present
-rm -f "$CONFIG_FILE"
+if [ -f "$CONFIG_FILE" ]; then
+    unlink "$CONFIG_FILE"
+fi
 
 # Write new config
 echo "$JSON_CONTENT" > "$CONFIG_FILE"
-chmod 666 "$CONFIG_FILE" # Ensure readable/writable
 
 if [ -f "$CONFIG_FILE" ]; then
     echo "[OK] Configuration saved to:"
     echo "     $CONFIG_FILE"
     
-    # Ensuring permissions are correct for the config file specifically
-    if [ -n "$SUDO_USER" ]; then
-        chown "$SUDO_USER:staff" "$CONFIG_FILE"
-    fi
+    # Keep the config readable by Premiere Pro and writable by the current user.
     chmod 644 "$CONFIG_FILE"
     
     echo ""
     echo "     Detected Settings:"
-    echo "     Python: $PYTHON_PATH"
+    echo "     Python: $RUNTIME_PYTHON_PATH"
     echo "     FFmpeg: $FFMPEG_PATH"
     echo ""
     echo "     Config Content:"

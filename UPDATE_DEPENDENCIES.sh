@@ -8,21 +8,33 @@ echo "========================================"
 echo ""
 
 UPDATES_DONE=0
+EXTENSION_PATH="$HOME/Library/Application Support/Adobe/CEP/extensions/PremierePro-AudioSeparator"
+CONFIG_FILE="$EXTENSION_PATH/config.json"
 
-# Reuse the installer's Python 3.11 lookup logic so Demucs is upgraded in the expected environment.
+# Prefer the Python runtime saved by the installer so Demucs stays in the local extension environment.
 PYTHON_PATH=""
+if [ -f "$CONFIG_FILE" ]; then
+    CONFIG_PYTHON_PATH="$(sed -n 's/.*"pythonPath"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$CONFIG_FILE")"
+    if [ -n "$CONFIG_PYTHON_PATH" ] && [ -x "$CONFIG_PYTHON_PATH" ]; then
+        PYTHON_PATH="$CONFIG_PYTHON_PATH"
+    fi
+fi
+
+# Fallback to the installer's Python 3.11 lookup logic when the config is missing.
 check_paths=(
     "/usr/local/bin/python3.11"
     "/opt/homebrew/bin/python3.11"
     "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3.11"
 )
 
-for p in "${check_paths[@]}"; do
-    if [ -f "$p" ] && [ -x "$p" ]; then
-        PYTHON_PATH="$p"
-        break
-    fi
-done
+if [ -z "$PYTHON_PATH" ]; then
+    for p in "${check_paths[@]}"; do
+        if [ -f "$p" ] && [ -x "$p" ]; then
+            PYTHON_PATH="$p"
+            break
+        fi
+    done
+fi
 
 if [ -z "$PYTHON_PATH" ] && command -v python3.11 &> /dev/null; then
     PYTHON_PATH="$(which python3.11)"

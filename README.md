@@ -1,4 +1,4 @@
-# 🎵 Audio Separator v2.4.1 - Premiere Pro Plugin
+# 🎵 Audio Separator v2.4.2 - Premiere Pro Plugin
 
 Professional plugin to separate audio tracks into stems (vocals, instrumental, drums, bass) directly in Adobe Premiere Pro, powered by Demucs AI.
 
@@ -56,7 +56,8 @@ This extension needs the following tools installed on your computer.
     ./INSTALL_MACOS.sh
     ```
 4.  The installer will detect your Python/FFmpeg paths, create a config file, and install the extension.
-5.  To refresh dependencies later (without reinstalling the extension), run `UPDATE_DEPENDENCIES.sh`.
+5.  The extension is installed for the current macOS user only, so administrator rights are not required.
+6.  To refresh dependencies later (without reinstalling the extension), run `UPDATE_DEPENDENCIES.sh`.
 
 #### Step 3: Restart Premiere Pro
 Go to **Window** > **Extensions** > **Audio Separator**
@@ -119,7 +120,8 @@ Cette extension nécessite l'installation des outils suivants.
     ./INSTALL_MACOS.sh
     ```
 4.  L'installateur va détecter vos chemins Python/FFmpeg, créer la configuration, et installer l'extension.
-5.  Pour mettre à jour les dépendances plus tard (sans réinstaller l'extension), lancez `UPDATE_DEPENDENCIES.sh`.
+5.  L'extension est installée uniquement pour l'utilisateur macOS actuel, donc aucun droit administrateur n'est nécessaire.
+6.  Pour mettre à jour les dépendances plus tard (sans réinstaller l'extension), lancez `UPDATE_DEPENDENCIES.sh`.
 
 #### Étape 3 : Redémarrer Premiere Pro
 Allez dans **Fenêtre** > **Extensions** > **Audio Separator**
@@ -143,5 +145,5 @@ Allez dans **Fenêtre** > **Extensions** > **Audio Separator**
 
 ---
 
-**Version**: 2.4.1
+**Version**: 2.4.2
 **Auteur**: Cyril V

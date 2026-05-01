@@ -11,7 +11,7 @@
     let originalProjectItem = null;
 
     const GITHUB_REPO = 'CyrilG93/PremierePro-AudioSeparator';
-    let CURRENT_VERSION = '2.4.1'; // Will be updated from manifest
+    let CURRENT_VERSION = '2.4.2'; // Will be updated from manifest
 
     // Language management - Default to English on first launch
     window.currentLanguage = localStorage.getItem('preferredLanguage') || 'en';
