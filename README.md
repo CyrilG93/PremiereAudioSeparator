@@ -147,3 +147,12 @@ Allez dans **Fenêtre** > **Extensions** > **Audio Separator**
 
 **Version**: 2.4.2
 **Auteur**: Cyril V
+
+---
+
+## Changelog
+
+### 2.4.2 - 2026-05-01
+- macOS installer no longer requires administrator rights.
+- Error popups now follow the selected language.
+- Language flags now display correctly in the language selector on Windows.
