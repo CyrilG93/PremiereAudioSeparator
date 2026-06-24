@@ -1,11 +1,11 @@
 @echo off
 REM Audio Separator for Premiere Pro - Windows Installer
-REM Version 2.4.4
+REM Version 2.4.5
 
 echo.
 echo ========================================
 echo Audio Separator for Premiere Pro
-echo Installation Package v2.4.4 - Windows
+echo Installation Package v2.4.5 - Windows
 echo ========================================
 echo.
 

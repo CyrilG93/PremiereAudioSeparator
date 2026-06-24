@@ -1,6 +1,6 @@
 {
-  "version": "2.4.4",
+  "version": "2.4.5",
   "releaseTag": "windows-runtime-v1",
-  "assetName": "AudioSeparator-Windows-Private-Runtime-v2.4.4.exe",
-  "sha256": "dde25eb9bf28568a4ffd7e22cab470f4422f6eca1ee44ab320c15fafd3f545ee"
+  "assetName": "AudioSeparator-Windows-Private-Runtime-v2.4.5.exe",
+  "sha256": "a2166ecf11d1a2fcb9adbd44a6efc9f8f08c3dfc704d908e20c91a9866369afc"
 }

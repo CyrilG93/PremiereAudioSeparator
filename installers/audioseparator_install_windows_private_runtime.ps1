@@ -69,6 +69,27 @@ function Install-AudioSepPrivateRuntime {
   Write-AudioSepInfo "Private runtime installed to $runtimeDir."
 }
 
+function Test-AudioSepRuntimeCommand {
+  param(
+    [string]$ToolName,
+    [string]$ToolPath,
+    [string[]]$Arguments
+  )
+
+  # // Capture native output before checking ExitCode so PowerShell pipelines cannot overwrite the tool result.
+  $output = & $ToolPath @Arguments 2>&1
+  $exitCode = $LASTEXITCODE
+  $firstLine = $output | Select-Object -First 1
+  if ($firstLine) {
+    Write-AudioSepInfo $firstLine.ToString()
+  }
+
+  if ($exitCode -ne 0) {
+    $details = ($output | Select-Object -First 8) -join "`n"
+    throw "$ToolName failed with code $exitCode.`n$details"
+  }
+}
+
 function Test-AudioSepPrivateRuntime {
   # // Validate all private tools before writing their paths to the CEP config file.
   $pythonPath = Join-Path $runtimeDir "python\python.exe"
@@ -82,18 +103,9 @@ function Test-AudioSepPrivateRuntime {
     Unblock-File -LiteralPath $tool -ErrorAction SilentlyContinue
   }
 
-  & $pythonPath -c "import demucs, torch; print('demucs runtime ok', torch.__version__)" | Write-Host
-  if ($LASTEXITCODE -ne 0) {
-    throw "Private Python could not import Demucs and Torch."
-  }
-  & $ffmpegPath -version | Select-Object -First 1 | Write-Host
-  if ($LASTEXITCODE -ne 0) {
-    throw "Private FFmpeg failed."
-  }
-  & $ffprobePath -version | Select-Object -First 1 | Write-Host
-  if ($LASTEXITCODE -ne 0) {
-    throw "Private FFprobe failed."
-  }
+  Test-AudioSepRuntimeCommand -ToolName "Private Python" -ToolPath $pythonPath -Arguments @("-c", "import demucs, torch; print('demucs runtime ok', torch.__version__)")
+  Test-AudioSepRuntimeCommand -ToolName "Private FFmpeg" -ToolPath $ffmpegPath -Arguments @("-version")
+  Test-AudioSepRuntimeCommand -ToolName "Private FFprobe" -ToolPath $ffprobePath -Arguments @("-version")
 }
 
 function Write-AudioSepExtensionConfig {

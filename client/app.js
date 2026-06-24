@@ -12,7 +12,7 @@
 
     const GITHUB_REPO = 'CyrilG93/PremierePro-AudioSeparator';
     // Keep the UI fallback in sync when the manifest cannot be read from CEP.
-    let CURRENT_VERSION = '2.4.4'; // Will be updated from manifest
+    let CURRENT_VERSION = '2.4.5'; // Will be updated from manifest
 
     // Language management - Default to English on first launch
     window.currentLanguage = localStorage.getItem('preferredLanguage') || 'en';
