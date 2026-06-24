@@ -1,6 +1,6 @@
-# 🎵 Audio Separator v2.4.2 - Premiere Pro Plugin
+# Audio Separator v2.4.3 - Premiere Pro Plugin
 
-Professional plugin to separate audio tracks into stems (vocals, instrumental, drums, bass) directly in Adobe Premiere Pro, powered by Demucs AI.
+Audio Separator separates an audio clip into stems directly from Adobe Premiere Pro. It can create vocals/instrumental stems or four stems: vocals, drums, bass and other.
 
 **[English](#english)** | **[Français](#français)**
 
@@ -8,149 +8,121 @@ Professional plugin to separate audio tracks into stems (vocals, instrumental, d
 
 # English
 
----
+## Features
 
-## ✨ Features
-*   **Separation**: 2 Stems (Vocals/Inst) or 4 Stems (Vocals/Drums/Bass/Other).
-*   **Performance**: Choose between Fast, Balanced, or Quality.
-*   **GPU Support**: Auto-detects NVIDIA CUDA or Apple Silicon (MPS).
-*   **Formats**: MP3, WAV, FLAC.
-*   **Premiere Pro**: Auto-import to project, localized UI and alerts (Chinese Simplified, English, French, German, Italian, Japanese, Portuguese-BR, Russian, Spanish).
+- 2-stem or 4-stem separation powered by Demucs.
+- Fast, balanced and quality processing modes.
+- MP3, WAV and FLAC output.
+- Automatic import of generated stems into Premiere Pro.
+- Localized interface and alerts.
 
----
+## Recommended Installation
 
-## 📋 Requirements
+Use the unified installer for your platform:
 
-This extension needs the following tools installed on your computer.
-**⚠️ YOU MUST INSTALL PYTHON AND FFMPEG MANUALLY BEFORE RUNNING THE INSTALLER.**
+- macOS: `AudioSeparator-v2.4.3-macOS-Installer-<arch>.pkg`
+- Windows: `AudioSeparator-v2.4.3-Windows-Full-Installer.exe`
 
-| Tool | Requirement | Action Required |
-|------|-------------|-----------------|
-| **Python** | **Strictly version 3.11.8** (required for Demucs compatibility) | ❌ **Install Manually** |
-| **FFmpeg** | Latest version | ❌ **Install Manually** |
-| **Node.js** | LTS Version | ❌ **Install Manually** |
-| **Demucs** | Python AI Library | ✅ **Automatic** (Installed by script) |
+The unified installer installs the Premiere Pro extension, enables CEP debug mode, and configures a private runtime with Python, Demucs and FFmpeg. You do not need to install Python, FFmpeg or Node.js manually.
 
-### 🔗 Download Links
-- **Python 3.11.8**: [Download Here](https://www.python.org/downloads/release/python-3118/)
-- **FFmpeg**: [Download Here](https://ffmpeg.org/download.html)
-- **Node.js**: [Download Here](https://nodejs.org/)
+After installation, restart Premiere Pro and open **Window > Extensions > Audio Separator**.
 
----
+## Windows Light Installer
 
-## 🚀 Installation
+`AudioSeparator-v2.4.3-Windows-Light-Installer.exe` is a smaller connected installer. It is intended for updates or for computers that can download the private runtime during installation. For a first offline installation, use the Full installer.
 
-### macOS Installation
+## Legacy Script Installation
 
-#### Step 1: Install Prerequisites (Manual)
-1.  **Install Python 3.11** (Use the link above or Homebrew: `brew install python@3.11`).
-2.  **Install FFmpeg** (Use the link above or Homebrew: `brew install ffmpeg`).
+The older scripts are still included as a fallback:
 
-#### Step 2: Run the Installer
-1.  Open Terminal.
-2.  **Easiest method (recommended):** drag and drop `INSTALL_MACOS.sh` into the Terminal window, then press Enter.
-3.  **Manual method (command line):** navigate to the extracted folder and run:
-    ```bash
-    cd /path/to/PremierePro-AudioSeparator
-    chmod +x INSTALL_MACOS.sh
-    ./INSTALL_MACOS.sh
-    ```
-4.  The installer will detect your Python/FFmpeg paths, create a config file, and install the extension.
-5.  The extension is installed for the current macOS user only, so administrator rights are not required.
-6.  To refresh dependencies later (without reinstalling the extension), run `UPDATE_DEPENDENCIES.sh`.
+- macOS: `INSTALL_MACOS.sh`
+- Windows: `INSTALL_WINDOWS.bat`
 
-#### Step 3: Restart Premiere Pro
-Go to **Window** > **Extensions** > **Audio Separator**
+Those scripts may still require manual Python/FFmpeg setup depending on the computer. Prefer the unified `.pkg` or `.exe` installers when available.
 
----
+## Developer Packaging
 
-### Windows Installation
+macOS:
 
-#### Step 1: Install Prerequisites (Manual)
-1.  **Install Python 3.11.8**: [Download Installer](https://www.python.org/downloads/release/python-3118/)
-    *   ⚠️ **IMPORTANT**: Check the box **"Add Python to PATH"** during installation.
-2.  **Install FFmpeg**: Extract it and add `bin` folder to your System PATH (or simpler: assume the installer will find it if it's in a standard location like `C:\ffmpeg\bin`).
+```bash
+npm run verify
+npm run package:macos-pkg
+```
 
-#### Step 2: Run the Installer
-1.  Right-click `INSTALL_WINDOWS.bat` → **Run as administrator**.
-2.  Follow the instructions. It will find Python 3.11, install Demucs, and configure the plugin.
-3.  To refresh dependencies later (without reinstalling the extension), run `UPDATE_DEPENDENCIES.bat`.
+Windows:
 
-#### Step 3: Restart Premiere Pro
-Go to **Window** > **Extensions** > **Audio Separator**
+```powershell
+npm.cmd run verify
+npm.cmd run package:windows-exe
+```
+
+Windows packaging must be completed on a Windows computer or runner. See `docs/windows-installer-build.md`.
 
 ---
 
 # Français
 
-## 📋 Prérequis
+## Fonctionnalités
 
-Cette extension nécessite l'installation des outils suivants.
-**⚠️ VOUS DEVEZ INSTALLER PYTHON ET FFMPEG MANUELLEMENT AVANT DE LANCER L'INSTALLATEUR.**
+- Séparation en 2 stems ou 4 stems avec Demucs.
+- Modes rapide, équilibré et qualité.
+- Sortie MP3, WAV ou FLAC.
+- Import automatique des stems générés dans Premiere Pro.
+- Interface et alertes localisées.
 
-| Outil | Prérequis | Action Requise |
-|-------|-----------|----------------|
-| **Python** | **Strictement version 3.11.8** (requis pour Demucs) | ❌ **Manuel** |
-| **FFmpeg** | Dernière version | ❌ **Manuel** |
-| **Node.js** | Version LTS | ❌ **Manuel** |
-| **Demucs** | Librairie IA | ✅ **Automatique** (via le script) |
+## Installation recommandée
 
-### 🔗 Liens de Téléchargement
-- **Python 3.11.8**: [Télécharger ici](https://www.python.org/downloads/release/python-3118/)
-- **FFmpeg**: [Télécharger ici](https://ffmpeg.org/download.html)
-- **Node.js**: [Télécharger ici](https://nodejs.org/)
+Utilisez l'installateur unifié adapté à votre plateforme :
 
----
+- macOS : `AudioSeparator-v2.4.3-macOS-Installer-<arch>.pkg`
+- Windows : `AudioSeparator-v2.4.3-Windows-Full-Installer.exe`
 
-## 🚀 Installation
+L'installateur unifié installe l'extension Premiere Pro, active le mode CEP debug et configure un runtime privé avec Python, Demucs et FFmpeg. Vous n'avez pas besoin d'installer Python, FFmpeg ou Node.js manuellement.
 
-### Installation macOS
+Après l'installation, redémarrez Premiere Pro puis ouvrez **Fenêtre > Extensions > Audio Separator**.
 
-#### Étape 1 : Installer les prérequis (Manuel)
-1.  **Installez Python 3.11** (Lien ci-dessus ou via Homebrew : `brew install python@3.11`).
-2.  **Installez FFmpeg** (Lien ci-dessus ou via Homebrew : `brew install ffmpeg`).
+## Installateur Windows Light
 
-#### Étape 2 : Lancer l'installateur
-1.  Ouvrez le Terminal.
-2.  **Méthode la plus simple (recommandée)** : glissez-déposez `INSTALL_MACOS.sh` dans la fenêtre du Terminal, puis appuyez sur Entrée.
-3.  **Méthode manuelle (ligne de commande)** : allez dans le dossier extrait puis lancez :
-    ```bash
-    cd /chemin/vers/PremierePro-AudioSeparator
-    chmod +x INSTALL_MACOS.sh
-    ./INSTALL_MACOS.sh
-    ```
-4.  L'installateur va détecter vos chemins Python/FFmpeg, créer la configuration, et installer l'extension.
-5.  L'extension est installée uniquement pour l'utilisateur macOS actuel, donc aucun droit administrateur n'est nécessaire.
-6.  Pour mettre à jour les dépendances plus tard (sans réinstaller l'extension), lancez `UPDATE_DEPENDENCIES.sh`.
+`AudioSeparator-v2.4.3-Windows-Light-Installer.exe` est un installateur connecté plus léger. Il sert surtout aux mises à jour ou aux ordinateurs qui peuvent télécharger le runtime privé pendant l'installation. Pour une première installation hors ligne, utilisez l'installateur Full.
 
-#### Étape 3 : Redémarrer Premiere Pro
-Allez dans **Fenêtre** > **Extensions** > **Audio Separator**
+## Installation par scripts historiques
 
----
+Les anciens scripts restent fournis en solution de secours :
 
-### Installation Windows
+- macOS : `INSTALL_MACOS.sh`
+- Windows : `INSTALL_WINDOWS.bat`
 
-#### Étape 1 : Installer les prérequis (Manuel)
-1.  **Installez Python 3.11.8** : [Télécharger l'installateur](https://www.python.org/downloads/release/python-3118/)
-    *   ⚠️ **IMPORTANT** : Cochez la case **"Add Python to PATH"** pendant l'installation.
-2.  **Installez FFmpeg** et ajoutez-le au PATH système.
+Ces scripts peuvent encore demander une installation manuelle de Python/FFmpeg selon l'ordinateur. Privilégiez les installateurs unifiés `.pkg` ou `.exe` quand ils sont disponibles.
 
-#### Étape 2 : Lancer l'installateur
-1.  Clic-droit sur `INSTALL_WINDOWS.bat` → **Exécuter en tant qu'administrateur**.
-2.  Suivez les instructions. Il va trouver Python 3.11, installer Demucs et configurer le plugin.
-3.  Pour mettre à jour les dépendances plus tard (sans réinstaller l'extension), lancez `UPDATE_DEPENDENCIES.bat`.
+## Packaging développeur
 
-#### Étape 3 : Redémarrer Premiere Pro
-Allez dans **Fenêtre** > **Extensions** > **Audio Separator**
+macOS :
+
+```bash
+npm run verify
+npm run package:macos-pkg
+```
+
+Windows :
+
+```powershell
+npm.cmd run verify
+npm.cmd run package:windows-exe
+```
+
+Le packaging Windows doit être terminé sur un ordinateur Windows ou un runner Windows. Voir `docs/windows-installer-build.md`.
 
 ---
 
-**Version**: 2.4.2
-**Auteur**: Cyril V
-
----
+**Version**: 2.4.3
+**Author**: Cyril V
 
 ## Changelog
+
+### 2.4.3 - 2026-06-24
+- Added unified macOS `.pkg` packaging with a private Python, Demucs and FFmpeg runtime.
+- Prepared unified Windows Full/Light `.exe` packaging with a private runtime.
+- GPU mode now checks the configured PyTorch runtime before using CUDA or Apple MPS.
 
 ### 2.4.2 - 2026-05-01
 - macOS installer no longer requires administrator rights.

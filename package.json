@@ -1,11 +1,16 @@
 {
   "name": "premiere-pro-audio-separator",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "description": "Professional Adobe Premiere Pro plugin to separate audio tracks into stems (vocals, instrumental, drums, bass) using AI-powered Demucs technology",
   "main": "client/index.html",
   "scripts": {
     "build": "echo 'No build step required for CEP extension'",
-    "package": "echo 'Use ZXPSignCmd to package the extension'"
+    "lint": "node --check client/app.js && node --check client/translations.js && node --check scripts/audioseparator-package-macos-pkg.mjs && node --check scripts/audioseparator-package-windows-exe.mjs",
+    "test": "npm run lint",
+    "verify": "npm run lint && npm run build",
+    "package": "echo 'Use package:macos-pkg or package:windows-exe for unified installers'",
+    "package:macos-pkg": "node scripts/audioseparator-package-macos-pkg.mjs",
+    "package:windows-exe": "node scripts/audioseparator-package-windows-exe.mjs"
   },
   "keywords": [
     "adobe",

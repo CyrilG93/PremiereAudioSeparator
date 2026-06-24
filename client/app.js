@@ -449,28 +449,63 @@
     /**
      * Detect GPU device
      */
-    function detectGPU() {
+    function detectGPU(config) {
         const os = require('os');
         const platform = os.platform();
+        const pythonPath = config && config.pythonPath;
 
         if (platform === 'darwin') {
-            // macOS - Check for Apple Silicon
+            // macOS - Use MPS only when the configured PyTorch runtime really exposes it.
             const arch = os.arch();
-            if (arch === 'arm64') {
+            if (arch === 'arm64' && pythonTorchFeatureAvailable(pythonPath, 'mps')) {
                 return 'mps';  // Apple Metal Performance Shaders
             }
         } else if (platform === 'win32' || platform === 'linux') {
-            // Windows/Linux - Check for CUDA
+            // Windows/Linux - Require both an NVIDIA driver and a CUDA-enabled PyTorch build.
             try {
                 const { execSync } = require('child_process');
                 execSync('nvidia-smi', { stdio: 'ignore' });
-                return 'cuda';
+                if (pythonTorchFeatureAvailable(pythonPath, 'cuda')) {
+                    return 'cuda';
+                }
             } catch (e) {
                 // No NVIDIA GPU
             }
         }
 
         return 'cpu';
+    }
+
+    /**
+     * Check the configured Python runtime for CUDA or Apple MPS support.
+     */
+    function pythonTorchFeatureAvailable(pythonPath, feature) {
+        if (!pythonPath) {
+            return false;
+        }
+
+        try {
+            const { execFileSync } = require('child_process');
+            const script = [
+                'import sys',
+                'try:',
+                '    import torch',
+                feature === 'cuda'
+                    ? '    ok = bool(torch.cuda.is_available())'
+                    : '    ok = bool(getattr(torch.backends, "mps", None) and torch.backends.mps.is_available())',
+                'except Exception:',
+                '    ok = False',
+                'print("1" if ok else "0")'
+            ].join('\n');
+            const output = execFileSync(pythonPath, ['-c', script], {
+                encoding: 'utf8',
+                timeout: 10000,
+                windowsHide: true
+            }).trim();
+            return output === '1';
+        } catch (e) {
+            return false;
+        }
     }
 
     /**
@@ -564,7 +599,7 @@
         addLogMessage(`🐍 Python: ${pythonPath}`);
 
         // Detect GPU
-        const device = detectGPU();
+        const device = detectGPU(config);
         if (device !== 'cpu') {
             addLogMessage(`🚀 ${t('gpuDetected')} ${device.toUpperCase()}`);
         } else {
