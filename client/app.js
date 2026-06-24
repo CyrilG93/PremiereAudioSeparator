@@ -11,7 +11,8 @@
     let originalProjectItem = null;
 
     const GITHUB_REPO = 'CyrilG93/PremierePro-AudioSeparator';
-    let CURRENT_VERSION = '2.4.2'; // Will be updated from manifest
+    // Keep the UI fallback in sync when the manifest cannot be read from CEP.
+    let CURRENT_VERSION = '2.4.4'; // Will be updated from manifest
 
     // Language management - Default to English on first launch
     window.currentLanguage = localStorage.getItem('preferredLanguage') || 'en';
@@ -601,17 +602,17 @@
         // Detect GPU
         const device = detectGPU(config);
         if (device !== 'cpu') {
-            addLogMessage(`🚀 ${t('gpuDetected')} ${device.toUpperCase()}`);
+            addLogMessage(`${t('gpuDetected')} ${device.toUpperCase()}`);
         } else {
-            addLogMessage(`💻 ${t('usingCpu')}`);
+            addLogMessage(t('usingCpu'));
         }
 
         addLogMessage(t('launching'));
-        addLogMessage(`${t('modeLabel')}: ` + (is4Stems ? '4 Stems' : '2 Stems'));
-        addLogMessage(`${t('modelLabel')}: ` + model);
-        addLogMessage(`${t('processingLabel')}: ` + processingMode);
-        addLogMessage(`${t('formatLabel')}: ` + outputFormat.toUpperCase());
-        addLogMessage(`${t('fileLabel')}: ` + inputPath);
+        addLogMessage(`${t('modeLabel')} ` + (is4Stems ? '4 Stems' : '2 Stems'));
+        addLogMessage(`${t('modelLabel')} ` + model);
+        addLogMessage(`${t('processingLabel')} ` + processingMode);
+        addLogMessage(`${t('formatLabel')} ` + outputFormat.toUpperCase());
+        addLogMessage(`${t('fileLabel')} ` + inputPath);
         updateProgress(10, t('separationInProgress'));
 
         // Build command arguments
