@@ -8,6 +8,7 @@
     "lint": "node --check client/app.js && node --check client/translations.js && node --check scripts/audioseparator-package-macos-pkg.mjs && node --check scripts/audioseparator-package-windows-exe.mjs",
     "test": "npm run lint",
     "verify": "npm run lint && npm run build",
+    "update:local:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audioseparator-update-local-windows.ps1",
     "package": "echo 'Use package:macos-pkg or package:windows-exe for unified installers'",
     "package:macos-pkg": "node scripts/audioseparator-package-macos-pkg.mjs",
     "package:windows-exe": "node scripts/audioseparator-package-windows-exe.mjs"

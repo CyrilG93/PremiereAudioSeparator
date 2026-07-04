@@ -44,6 +44,14 @@ Those scripts may still require manual Python/FFmpeg setup depending on the comp
 
 ## Developer Packaging
 
+Quick local Windows update without rebuilding the `.exe`:
+
+```powershell
+npm.cmd run update:local:windows
+```
+
+You can also double-click `UPDATE_LOCAL_WINDOWS.bat`. Restart Premiere Pro after the copy.
+
 macOS:
 
 ```bash
