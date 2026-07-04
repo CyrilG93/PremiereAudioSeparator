@@ -1,4 +1,4 @@
-# Audio Separator v2.4.5 - Premiere Pro Plugin
+# Audio Separator v2.4.6 - Premiere Pro Plugin
 
 Audio Separator separates an audio clip into stems directly from Adobe Premiere Pro. It can create vocals/instrumental stems or four stems: vocals, drums, bass and other.
 
@@ -20,8 +20,8 @@ Audio Separator separates an audio clip into stems directly from Adobe Premiere 
 
 Use the unified installer for your platform:
 
-- macOS: `AudioSeparator-v2.4.5-macOS-Installer-<arch>.pkg`
-- Windows: `AudioSeparator-v2.4.5-Windows-Full-Installer.exe`
+- macOS: `AudioSeparator-v2.4.6-macOS-Installer-<arch>.pkg`
+- Windows: `AudioSeparator-v2.4.6-Windows-Full-Installer.exe`
 
 The unified installer installs the Premiere Pro extension, enables CEP debug mode, and configures a private runtime with Python, Demucs and FFmpeg. You do not need to install Python, FFmpeg or Node.js manually.
 
@@ -29,7 +29,9 @@ After installation, restart Premiere Pro and open **Window > Extensions > Audio 
 
 ## Windows Light Installer
 
-`AudioSeparator-v2.4.5-Windows-Light-Installer.exe` is a smaller connected installer. It is intended for updates or for computers that can download the private runtime during installation. For a first offline installation, use the Full installer.
+`AudioSeparator-v2.4.6-Windows-Light-Installer.exe` is a smaller connected installer. It is intended for updates or for computers that can download the private runtime during installation. For a first offline installation, use the Full installer.
+
+Click the version badge in the header to open the Audio Separator product page.
 
 ## Legacy Script Installation
 
@@ -74,8 +76,8 @@ Windows packaging must be completed on a Windows computer or runner. See `docs/w
 
 Utilisez l'installateur unifié adapté à votre plateforme :
 
-- macOS : `AudioSeparator-v2.4.5-macOS-Installer-<arch>.pkg`
-- Windows : `AudioSeparator-v2.4.5-Windows-Full-Installer.exe`
+- macOS : `AudioSeparator-v2.4.6-macOS-Installer-<arch>.pkg`
+- Windows : `AudioSeparator-v2.4.6-Windows-Full-Installer.exe`
 
 L'installateur unifié installe l'extension Premiere Pro, active le mode CEP debug et configure un runtime privé avec Python, Demucs et FFmpeg. Vous n'avez pas besoin d'installer Python, FFmpeg ou Node.js manuellement.
 
@@ -83,7 +85,9 @@ Après l'installation, redémarrez Premiere Pro puis ouvrez **Fenêtre > Extensi
 
 ## Installateur Windows Light
 
-`AudioSeparator-v2.4.5-Windows-Light-Installer.exe` est un installateur connecté plus léger. Il sert surtout aux mises à jour ou aux ordinateurs qui peuvent télécharger le runtime privé pendant l'installation. Pour une première installation hors ligne, utilisez l'installateur Full.
+`AudioSeparator-v2.4.6-Windows-Light-Installer.exe` est un installateur connecté plus léger. Il sert surtout aux mises à jour ou aux ordinateurs qui peuvent télécharger le runtime privé pendant l'installation. Pour une première installation hors ligne, utilisez l'installateur Full.
+
+Cliquez sur le badge de version dans l'en-tête pour ouvrir la page produit Audio Separator.
 
 ## Installation par scripts historiques
 
@@ -114,7 +118,7 @@ Le packaging Windows doit être terminé sur un ordinateur Windows ou un runner 
 
 ---
 
-**Version**: 2.4.5
+**Version**: 2.4.6
 **Author**: Cyril V
 
 ## Changelog

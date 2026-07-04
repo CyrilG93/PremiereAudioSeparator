@@ -11,8 +11,9 @@
     let originalProjectItem = null;
 
     const GITHUB_REPO = 'CyrilG93/PremierePro-AudioSeparator';
+    const PRODUCT_PAGE_URL = 'https://www.cyrilplugin.com/audio-separator';
     // Keep the UI fallback in sync when the manifest cannot be read from CEP.
-    let CURRENT_VERSION = '2.4.5'; // Will be updated from manifest
+    let CURRENT_VERSION = '2.4.6'; // Will be updated from manifest
 
     // Language management - Default to English on first launch
     window.currentLanguage = localStorage.getItem('preferredLanguage') || 'en';
@@ -192,6 +193,7 @@
         loadLanguage(window.currentLanguage);
 
         setupEventListeners();
+        initVersionLink();
         checkPythonEnvironment();
 
         // Check for updates
@@ -970,7 +972,40 @@
         var versionEl = document.getElementById('versionInfo');
         if (versionEl) {
             versionEl.textContent = 'v' + CURRENT_VERSION;
+            versionEl.setAttribute('aria-label', 'Open Audio Separator page for version ' + CURRENT_VERSION);
         }
+    }
+
+    function openExternalUrl(url) {
+        // Open external URLs through CEP when the panel runs inside Premiere.
+        try {
+            const hasCepBrowser = typeof cep !== 'undefined' || (typeof window !== 'undefined' && window.cep);
+            if (hasCepBrowser && csInterface && typeof csInterface.openURLInDefaultBrowser === 'function') {
+                csInterface.openURLInDefaultBrowser(url);
+                return;
+            }
+        } catch (e) {
+            console.error('[Link] Error opening URL through CEP:', e);
+        }
+
+        // Fall back to regular browser navigation when testing outside Premiere.
+        try {
+            const popup = window.open(url, '_blank');
+            if (!popup) {
+                window.location.href = url;
+            }
+        } catch (e) {
+            console.error('[Link] Browser fallback failed:', e);
+        }
+    }
+
+    function initVersionLink() {
+        // Make the header version badge open the public product page.
+        const versionBadge = document.getElementById('versionInfo');
+        if (!versionBadge) return;
+        versionBadge.addEventListener('click', function () {
+            openExternalUrl(PRODUCT_PAGE_URL);
+        });
     }
 
     function checkForUpdates() {
@@ -1058,17 +1093,7 @@
             banner.style.display = 'block';
             banner.onclick = function () {
                 if (downloadUrl) {
-                    try {
-                        csInterface.openURLInDefaultBrowser(downloadUrl);
-                    } catch (e) {
-                        console.error('[Update] Error opening URL:', e);
-                        // Fallback attempt
-                        try {
-                            window.location.href = downloadUrl;
-                        } catch (e2) {
-                            console.error('[Update] Fallback failed:', e2);
-                        }
-                    }
+                    openExternalUrl(downloadUrl);
                 }
             };
         }
