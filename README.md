@@ -1,4 +1,4 @@
-# Audio Separator v2.4.6 - Premiere Pro Plugin
+# Audio Separator v2.4.7 - Premiere Pro Plugin
 
 Audio Separator separates an audio clip into stems directly from Adobe Premiere Pro. It can create vocals/instrumental stems or four stems: vocals, drums, bass and other.
 
@@ -15,13 +15,14 @@ Audio Separator separates an audio clip into stems directly from Adobe Premiere 
 - MP3, WAV and FLAC output.
 - Automatic import of generated stems into Premiere Pro.
 - Localized interface and alerts.
+- Premiere Theme Support: panel colors follow Premiere Pro's light and dark interface colors.
 
 ## Recommended Installation
 
 Use the unified installer for your platform:
 
-- macOS: `AudioSeparator-v2.4.6-macOS-Installer-<arch>.pkg`
-- Windows: `AudioSeparator-v2.4.6-Windows-Full-Installer.exe`
+- macOS: `AudioSeparator-v2.4.7-macOS-Installer-<arch>.pkg`
+- Windows: `AudioSeparator-v2.4.7-Windows-Full-Installer.exe`
 
 The unified installer installs the Premiere Pro extension, enables CEP debug mode, and configures a private runtime with Python, Demucs and FFmpeg. You do not need to install Python, FFmpeg or Node.js manually.
 
@@ -29,7 +30,7 @@ After installation, restart Premiere Pro and open **Window > Extensions > Audio 
 
 ## Windows Light Installer
 
-`AudioSeparator-v2.4.6-Windows-Light-Installer.exe` is a smaller connected installer. It is intended for updates or for computers that can download the private runtime during installation. For a first offline installation, use the Full installer.
+`AudioSeparator-v2.4.7-Windows-Light-Installer.exe` is a smaller connected installer. It is intended for updates or for computers that can download the private runtime during installation. For a first offline installation, use the Full installer.
 
 Click the version badge in the header to open the Audio Separator product page.
 
@@ -43,6 +44,12 @@ The older scripts are still included as a fallback:
 Those scripts may still require manual Python/FFmpeg setup depending on the computer. Prefer the unified `.pkg` or `.exe` installers when available.
 
 ## Developer Packaging
+
+For a quick local macOS panel update without rebuilding the PKG, run:
+
+```bash
+./UPDATE_LOCAL_MACOS.sh
+```
 
 Quick local Windows update without rebuilding the `.exe`:
 
@@ -79,13 +86,14 @@ Windows packaging must be completed on a Windows computer or runner. See `docs/w
 - Sortie MP3, WAV ou FLAC.
 - Import automatique des stems générés dans Premiere Pro.
 - Interface et alertes localisées.
+- Support du thème Premiere : les couleurs du panneau suivent les modes clair et sombre de Premiere Pro.
 
 ## Installation recommandée
 
 Utilisez l'installateur unifié adapté à votre plateforme :
 
-- macOS : `AudioSeparator-v2.4.6-macOS-Installer-<arch>.pkg`
-- Windows : `AudioSeparator-v2.4.6-Windows-Full-Installer.exe`
+- macOS : `AudioSeparator-v2.4.7-macOS-Installer-<arch>.pkg`
+- Windows : `AudioSeparator-v2.4.7-Windows-Full-Installer.exe`
 
 L'installateur unifié installe l'extension Premiere Pro, active le mode CEP debug et configure un runtime privé avec Python, Demucs et FFmpeg. Vous n'avez pas besoin d'installer Python, FFmpeg ou Node.js manuellement.
 
@@ -93,7 +101,7 @@ Après l'installation, redémarrez Premiere Pro puis ouvrez **Fenêtre > Extensi
 
 ## Installateur Windows Light
 
-`AudioSeparator-v2.4.6-Windows-Light-Installer.exe` est un installateur connecté plus léger. Il sert surtout aux mises à jour ou aux ordinateurs qui peuvent télécharger le runtime privé pendant l'installation. Pour une première installation hors ligne, utilisez l'installateur Full.
+`AudioSeparator-v2.4.7-Windows-Light-Installer.exe` est un installateur connecté plus léger. Il sert surtout aux mises à jour ou aux ordinateurs qui peuvent télécharger le runtime privé pendant l'installation. Pour une première installation hors ligne, utilisez l'installateur Full.
 
 Cliquez sur le badge de version dans l'en-tête pour ouvrir la page produit Audio Separator.
 
@@ -107,6 +115,12 @@ Les anciens scripts restent fournis en solution de secours :
 Ces scripts peuvent encore demander une installation manuelle de Python/FFmpeg selon l'ordinateur. Privilégiez les installateurs unifiés `.pkg` ou `.exe` quand ils sont disponibles.
 
 ## Packaging développeur
+
+Pour mettre à jour rapidement le panneau local sur macOS sans reconstruire le PKG, lancez :
+
+```bash
+./UPDATE_LOCAL_MACOS.sh
+```
 
 macOS :
 
@@ -126,7 +140,7 @@ Le packaging Windows doit être terminé sur un ordinateur Windows ou un runner 
 
 ---
 
-**Version**: 2.4.6
+**Version**: 2.4.7
 **Author**: Cyril V
 
 ## Changelog

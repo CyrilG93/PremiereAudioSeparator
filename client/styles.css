@@ -2,9 +2,11 @@
     --bg-primary: #1e1e1e;
     --bg-secondary: #252525;
     --bg-tertiary: #2d2d2d;
+    --bg-tertiary-rgb: 45, 45, 45;
     --text-primary: #e0e0e0;
     --text-secondary: #b0b0b0;
     --accent-primary: #0078d4;
+    --accent-primary-rgb: 0, 120, 212;
     --accent-hover: #106ebe;
     --success: #107c10;
     --success-hover: #0e6b0e;
@@ -19,7 +21,7 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: var(--ui-font-family, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif);
     background-color: var(--bg-primary);
     color: var(--text-primary);
     overflow-x: hidden;
@@ -86,8 +88,8 @@ header {
 
 .header-version:hover,
 .header-version:focus {
-    background: rgba(99, 102, 241, 0.16);
-    border-color: var(--primary);
+    background: rgba(var(--accent-primary-rgb), 0.16);
+    border-color: var(--accent-primary);
     color: var(--text-primary);
     outline: none;
 }
@@ -146,7 +148,7 @@ header h1 {
 .language-button:focus {
     outline: none;
     border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+    box-shadow: 0 0 0 2px rgba(var(--accent-primary-rgb), 0.2);
 }
 
 .language-arrow {
