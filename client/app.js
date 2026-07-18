@@ -13,7 +13,7 @@
     const GITHUB_REPO = 'CyrilG93/PremierePro-AudioSeparator';
     const PRODUCT_PAGE_URL = 'https://www.cyrilplugin.com/audio-separator';
     // Keep the UI fallback in sync when the manifest cannot be read from CEP.
-    let CURRENT_VERSION = '2.4.9'; // Will be updated from manifest
+    let CURRENT_VERSION = '2.4.10'; // Will be updated from manifest
     const CEP_THEME_COLOR_CHANGED_EVENT = 'com.adobe.csxs.events.ThemeColorChanged';
 
     // Language management - Default to English on first launch
@@ -852,11 +852,8 @@
             const progressEvents = progressTracker.consumeStderr(output);
             if (progressEvents.length > 0) {
                 const latestProgress = progressEvents[progressEvents.length - 1];
-                const displayedPercent = Math.round(latestProgress.overallPercent);
-                updateProgress(
-                    latestProgress.overallPercent,
-                    t('separationInProgress') + ' ' + displayedPercent + '%'
-                );
+                // // Keep the numeric percentage only in its dedicated header field.
+                updateProgress(latestProgress.overallPercent, t('separationInProgress'));
             }
         });
 

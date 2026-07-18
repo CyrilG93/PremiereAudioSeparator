@@ -45,6 +45,10 @@ async function main() {
     app.includes("createGlobalProgressTracker") && app.includes("progressTracker.consumeStderr(output)"),
     "Demucs output must use the global progress tracker."
   );
+  assertCondition(
+    app.includes("updateProgress(latestProgress.overallPercent, t('separationInProgress'))"),
+    "The progress percentage must appear only in its dedicated header field."
+  );
 
   const windowsPackage = await readProjectFile("scripts/audioseparator-package-windows-exe.mjs");
   const macPackage = await readProjectFile("scripts/audioseparator-package-macos-pkg.mjs");
