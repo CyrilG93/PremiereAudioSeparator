@@ -34,12 +34,17 @@ async function main() {
   assertCondition(manifest.includes(`Version="${version}"/>`), "Manifest extension version is stale.");
   assertCondition(app.includes(`CURRENT_VERSION = '${version}'`), "client/app.js version fallback is stale.");
   assertCondition(html.includes(`>v${version}</button>`), "client/index.html version badge is stale.");
+  assertCondition(html.includes('<script src="progress.js"></script>'), "Global progress tracker is not loaded by the panel.");
   assertCondition(translations.includes(`version: "v${version} - Robust"`), "Translation version is stale.");
   assertCondition(readme.startsWith(`# Audio Separator v${version}`), "README title version is stale.");
 
   // // Reject the unsupported Demucs option that previously broke Fast mode.
   assertCondition(!app.includes("--quantized"), "Fast mode must not use the unsupported --quantized option.");
   assertCondition(app.includes("args.push('--shifts', '0')"), "Fast mode must use supported reduced-shift settings.");
+  assertCondition(
+    app.includes("createGlobalProgressTracker") && app.includes("progressTracker.consumeStderr(output)"),
+    "Demucs output must use the global progress tracker."
+  );
 
   const windowsPackage = await readProjectFile("scripts/audioseparator-package-windows-exe.mjs");
   const macPackage = await readProjectFile("scripts/audioseparator-package-macos-pkg.mjs");

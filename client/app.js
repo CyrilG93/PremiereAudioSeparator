@@ -13,7 +13,7 @@
     const GITHUB_REPO = 'CyrilG93/PremierePro-AudioSeparator';
     const PRODUCT_PAGE_URL = 'https://www.cyrilplugin.com/audio-separator';
     // Keep the UI fallback in sync when the manifest cannot be read from CEP.
-    let CURRENT_VERSION = '2.4.8'; // Will be updated from manifest
+    let CURRENT_VERSION = '2.4.9'; // Will be updated from manifest
     const CEP_THEME_COLOR_CHANGED_EVENT = 'com.adobe.csxs.events.ThemeColorChanged';
 
     // Language management - Default to English on first launch
@@ -828,11 +828,19 @@
 
         let outputData = '';
         let errorData = '';
+        // // Track all Demucs model passes as one monotonic percentage for every stem mode.
+        const progressTracker = window.AudioSeparatorProgress.createGlobalProgressTracker({
+            expectedModelPasses: window.AudioSeparatorProgress.getExpectedModelPasses(model),
+            passMultiplier: 1,
+            startPercent: 10,
+            endPercent: 95
+        });
 
         currentProcess.stdout.on('data', function (data) {
             const output = data.toString();
             outputData += output;
             addLogMessage('📝 ' + output.trim());
+            progressTracker.consumeStdout(output);
         });
 
         currentProcess.stderr.on('data', function (data) {
@@ -840,13 +848,15 @@
             errorData += output;
             addLogMessage('ℹ️ ' + output.trim());
 
-            // Update progress based on output
-            if (output.includes('%')) {
-                const match = output.match(/(\d+)%/);
-                if (match) {
-                    const percent = parseInt(match[1]);
-                    updateProgress(10 + (percent * 0.85), t('separationInProgress') + ' ' + percent + '%');
-                }
+            // // Use the last update when a stderr chunk contains several tqdm lines.
+            const progressEvents = progressTracker.consumeStderr(output);
+            if (progressEvents.length > 0) {
+                const latestProgress = progressEvents[progressEvents.length - 1];
+                const displayedPercent = Math.round(latestProgress.overallPercent);
+                updateProgress(
+                    latestProgress.overallPercent,
+                    t('separationInProgress') + ' ' + displayedPercent + '%'
+                );
             }
         });
 

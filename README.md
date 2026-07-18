@@ -1,4 +1,4 @@
-# Audio Separator v2.4.8 - Premiere Pro Plugin
+# Audio Separator v2.4.9 - Premiere Pro Plugin
 
 Audio Separator separates an audio clip into stems directly from Adobe Premiere Pro. It can create vocals/instrumental stems or four stems: vocals, drums, bass and other.
 
@@ -12,6 +12,7 @@ Audio Separator separates an audio clip into stems directly from Adobe Premiere 
 
 - 2-stem or 4-stem separation powered by Demucs.
 - Fast, balanced and quality processing modes.
+- One global progress percentage across all Demucs model passes.
 - MP3, WAV and FLAC output.
 - Automatic import of generated stems into Premiere Pro.
 - Localized interface and alerts.
@@ -21,8 +22,8 @@ Audio Separator separates an audio clip into stems directly from Adobe Premiere 
 
 Download the unified installer for your platform:
 
-- macOS Apple Silicon: `AudioSeparator-v2.4.8-macOS-Installer-arm64.pkg`
-- Windows 64-bit: `AudioSeparator-v2.4.8-Windows-Full-Installer.exe`
+- macOS Apple Silicon: `AudioSeparator-v2.4.9-macOS-Installer-arm64.pkg`
+- Windows 64-bit: `AudioSeparator-v2.4.9-Windows-Full-Installer.exe`
 
 The installer includes the Premiere Pro extension and a private runtime with Python 3.11.8, Demucs 4.1.0, PyTorch 2.13.0 and FFmpeg. Python, FFmpeg and Node.js do not need to be installed separately.
 
@@ -63,6 +64,7 @@ Generated installers are written to `Releases/`. See `docs/windows-installer-bui
 
 - Séparation en 2 stems ou 4 stems avec Demucs.
 - Modes de traitement rapide, équilibré et qualité.
+- Pourcentage de progression global sur toutes les passes des modèles Demucs.
 - Sortie MP3, WAV ou FLAC.
 - Import automatique des stems générés dans Premiere Pro.
 - Interface et alertes localisées.
@@ -72,8 +74,8 @@ Generated installers are written to `Releases/`. See `docs/windows-installer-bui
 
 Téléchargez l'installateur unifié adapté à votre plateforme :
 
-- macOS Apple Silicon : `AudioSeparator-v2.4.8-macOS-Installer-arm64.pkg`
-- Windows 64 bits : `AudioSeparator-v2.4.8-Windows-Full-Installer.exe`
+- macOS Apple Silicon : `AudioSeparator-v2.4.9-macOS-Installer-arm64.pkg`
+- Windows 64 bits : `AudioSeparator-v2.4.9-Windows-Full-Installer.exe`
 
 L'installateur inclut l'extension Premiere Pro et un runtime privé contenant Python 3.11.8, Demucs 4.1.0, PyTorch 2.13.0 et FFmpeg. Il n'est pas nécessaire d'installer Python, FFmpeg ou Node.js séparément.
 
@@ -108,7 +110,7 @@ Les installateurs générés sont écrits dans `Releases/`. Consultez `docs/wind
 
 ---
 
-**Version**: 2.4.8
+**Version**: 2.4.9
 **Author**: Cyril V
 
 ## Changelog
