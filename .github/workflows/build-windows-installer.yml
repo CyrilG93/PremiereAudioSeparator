@@ -2,23 +2,6 @@ name: Build Windows Installer
 
 on:
   workflow_dispatch:
-    inputs:
-      full_only:
-        description: Build only the Full installer
-        required: false
-        default: "false"
-        type: choice
-        options:
-          - "false"
-          - "true"
-      light_only:
-        description: Build only the Light installer
-        required: false
-        default: "false"
-        type: choice
-        options:
-          - "false"
-          - "true"
 
 jobs:
   build:
@@ -38,16 +21,10 @@ jobs:
         run: npm.cmd run verify
 
       - name: Build installer
-        shell: pwsh
-        run: |
-          if ('${{ inputs.full_only }}' -eq 'true') { $env:AUDIOSEP_WINDOWS_FULL_ONLY = '1' }
-          if ('${{ inputs.light_only }}' -eq 'true') { $env:AUDIOSEP_WINDOWS_LIGHT_ONLY = '1' }
-          npm.cmd run package:windows-exe
+        run: npm.cmd run package:windows-exe
 
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
-          name: AudioSeparator-Windows-Installers
-          path: |
-            Releases/*.exe
-            installers/windows-runtime.json
+          name: AudioSeparator-Windows-Full-Installer
+          path: Releases/*-Windows-Full-Installer.exe

@@ -1,4 +1,4 @@
-# Audio Separator v2.4.7 - Premiere Pro Plugin
+# Audio Separator v2.4.8 - Premiere Pro Plugin
 
 Audio Separator separates an audio clip into stems directly from Adobe Premiere Pro. It can create vocals/instrumental stems or four stems: vocals, drums, bass and other.
 
@@ -15,65 +15,45 @@ Audio Separator separates an audio clip into stems directly from Adobe Premiere 
 - MP3, WAV and FLAC output.
 - Automatic import of generated stems into Premiere Pro.
 - Localized interface and alerts.
-- Premiere Theme Support: panel colors follow Premiere Pro's light and dark interface colors.
+- Panel colors follow Premiere Pro's light and dark themes.
 
-## Recommended Installation
+## Installation
 
-Use the unified installer for your platform:
+Download the unified installer for your platform:
 
-- macOS: `AudioSeparator-v2.4.7-macOS-Installer-<arch>.pkg`
-- Windows: `AudioSeparator-v2.4.7-Windows-Full-Installer.exe`
+- macOS Apple Silicon: `AudioSeparator-v2.4.8-macOS-Installer-arm64.pkg`
+- Windows 64-bit: `AudioSeparator-v2.4.8-Windows-Full-Installer.exe`
 
-The unified installer installs the Premiere Pro extension, enables CEP debug mode, and configures a private runtime with Python, Demucs and FFmpeg. You do not need to install Python, FFmpeg or Node.js manually.
+The installer includes the Premiere Pro extension and a private runtime with Python 3.11.8, Demucs 4.1.0, PyTorch 2.13.0 and FFmpeg. Python, FFmpeg and Node.js do not need to be installed separately.
+
+The installers are currently unsigned:
+
+- On Windows, select **More info > Run anyway** if Microsoft Defender SmartScreen appears.
+- On macOS, Control-click the PKG, choose **Open**, then confirm. If necessary, allow it from **System Settings > Privacy & Security**.
 
 After installation, restart Premiere Pro and open **Window > Extensions > Audio Separator**.
 
-## Windows Light Installer
+The first use of each Demucs model requires an internet connection to download its model files. They are cached locally for later offline use.
 
-`AudioSeparator-v2.4.7-Windows-Light-Installer.exe` is a smaller connected installer. It is intended for updates or for computers that can download the private runtime during installation. For a first offline installation, use the Full installer.
-
-Click the version badge in the header to open the Audio Separator product page.
-
-## Legacy Script Installation
-
-The older scripts are still included as a fallback:
-
-- macOS: `INSTALL_MACOS.sh`
-- Windows: `INSTALL_WINDOWS.bat`
-
-Those scripts may still require manual Python/FFmpeg setup depending on the computer. Prefer the unified `.pkg` or `.exe` installers when available.
+Click the version badge in the panel header to open the Audio Separator product page.
 
 ## Developer Packaging
 
-For a quick local macOS panel update without rebuilding the PKG, run:
-
-```bash
-./UPDATE_LOCAL_MACOS.sh
-```
-
-Quick local Windows update without rebuilding the `.exe`:
-
-```powershell
-npm.cmd run update:local:windows
-```
-
-You can also double-click `UPDATE_LOCAL_WINDOWS.bat`. Restart Premiere Pro after the copy.
-
-macOS:
-
-```bash
-npm run verify
-npm run package:macos-pkg
-```
-
-Windows:
+Windows packaging requires Windows, Node.js and an internet connection. Inno Setup is downloaded automatically when it is not already installed:
 
 ```powershell
 npm.cmd run verify
 npm.cmd run package:windows-exe
 ```
 
-Windows packaging must be completed on a Windows computer or runner. See `docs/windows-installer-build.md`.
+macOS packaging requires an Apple Silicon Mac, Node.js, `uv` and the Xcode Command Line Tools:
+
+```bash
+npm run verify
+npm run package:macos-pkg
+```
+
+Generated installers are written to `Releases/`. See `docs/windows-installer-build.md` for Windows build details.
 
 ---
 
@@ -82,82 +62,59 @@ Windows packaging must be completed on a Windows computer or runner. See `docs/w
 ## Fonctionnalités
 
 - Séparation en 2 stems ou 4 stems avec Demucs.
-- Modes rapide, équilibré et qualité.
+- Modes de traitement rapide, équilibré et qualité.
 - Sortie MP3, WAV ou FLAC.
 - Import automatique des stems générés dans Premiere Pro.
 - Interface et alertes localisées.
-- Support du thème Premiere : les couleurs du panneau suivent les modes clair et sombre de Premiere Pro.
+- Couleurs adaptées aux thèmes clair et sombre de Premiere Pro.
 
-## Installation recommandée
+## Installation
 
-Utilisez l'installateur unifié adapté à votre plateforme :
+Téléchargez l'installateur unifié adapté à votre plateforme :
 
-- macOS : `AudioSeparator-v2.4.7-macOS-Installer-<arch>.pkg`
-- Windows : `AudioSeparator-v2.4.7-Windows-Full-Installer.exe`
+- macOS Apple Silicon : `AudioSeparator-v2.4.8-macOS-Installer-arm64.pkg`
+- Windows 64 bits : `AudioSeparator-v2.4.8-Windows-Full-Installer.exe`
 
-L'installateur unifié installe l'extension Premiere Pro, active le mode CEP debug et configure un runtime privé avec Python, Demucs et FFmpeg. Vous n'avez pas besoin d'installer Python, FFmpeg ou Node.js manuellement.
+L'installateur inclut l'extension Premiere Pro et un runtime privé contenant Python 3.11.8, Demucs 4.1.0, PyTorch 2.13.0 et FFmpeg. Il n'est pas nécessaire d'installer Python, FFmpeg ou Node.js séparément.
+
+Les installateurs ne sont pas encore signés :
+
+- Sous Windows, sélectionnez **Informations complémentaires > Exécuter quand même** si Microsoft Defender SmartScreen apparaît.
+- Sous macOS, faites un Ctrl-clic sur le PKG, choisissez **Ouvrir**, puis confirmez. Si nécessaire, autorisez-le depuis **Réglages Système > Confidentialité et sécurité**.
 
 Après l'installation, redémarrez Premiere Pro puis ouvrez **Fenêtre > Extensions > Audio Separator**.
 
-## Installateur Windows Light
+La première utilisation de chaque modèle Demucs nécessite une connexion internet pour télécharger ses fichiers. Ils sont ensuite conservés localement pour les utilisations hors ligne.
 
-`AudioSeparator-v2.4.7-Windows-Light-Installer.exe` est un installateur connecté plus léger. Il sert surtout aux mises à jour ou aux ordinateurs qui peuvent télécharger le runtime privé pendant l'installation. Pour une première installation hors ligne, utilisez l'installateur Full.
-
-Cliquez sur le badge de version dans l'en-tête pour ouvrir la page produit Audio Separator.
-
-## Installation par scripts historiques
-
-Les anciens scripts restent fournis en solution de secours :
-
-- macOS : `INSTALL_MACOS.sh`
-- Windows : `INSTALL_WINDOWS.bat`
-
-Ces scripts peuvent encore demander une installation manuelle de Python/FFmpeg selon l'ordinateur. Privilégiez les installateurs unifiés `.pkg` ou `.exe` quand ils sont disponibles.
+Cliquez sur le badge de version dans l'en-tête du panneau pour ouvrir la page produit Audio Separator.
 
 ## Packaging développeur
 
-Pour mettre à jour rapidement le panneau local sur macOS sans reconstruire le PKG, lancez :
-
-```bash
-./UPDATE_LOCAL_MACOS.sh
-```
-
-macOS :
-
-```bash
-npm run verify
-npm run package:macos-pkg
-```
-
-Windows :
+Le packaging Windows nécessite Windows, Node.js et une connexion internet. Inno Setup est téléchargé automatiquement s'il n'est pas déjà installé :
 
 ```powershell
 npm.cmd run verify
 npm.cmd run package:windows-exe
 ```
 
-Le packaging Windows doit être terminé sur un ordinateur Windows ou un runner Windows. Voir `docs/windows-installer-build.md`.
+Le packaging macOS nécessite un Mac Apple Silicon, Node.js, `uv` et les Xcode Command Line Tools :
+
+```bash
+npm run verify
+npm run package:macos-pkg
+```
+
+Les installateurs générés sont écrits dans `Releases/`. Consultez `docs/windows-installer-build.md` pour les détails du build Windows.
 
 ---
 
-**Version**: 2.4.7
+**Version**: 2.4.8
 **Author**: Cyril V
 
 ## Changelog
 
-### 2.4.5 - 2026-06-24
-- Fixed the Windows installer validation at the end of installation.
-
-### 2.4.4 - 2026-06-24
-- Fixed the version displayed in the panel.
-- Improved GPU and settings log labels.
-
-### 2.4.3 - 2026-06-24
-- Added unified macOS `.pkg` packaging with a private Python, Demucs and FFmpeg runtime.
-- Prepared unified Windows Full/Light `.exe` packaging with a private runtime.
-- GPU mode now checks the configured PyTorch runtime before using CUDA or Apple MPS.
-
 ### 2.4.2 - 2026-05-01
+
 - macOS installer no longer requires administrator rights.
 - Error popups now follow the selected language.
 - Language flags now display correctly in the language selector on Windows.

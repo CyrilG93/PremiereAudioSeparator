@@ -41,7 +41,7 @@ window.translations = {
         // Processing mode
         processingMode: "Mode de traitement:",
         modeBalanced: "⚖️ Équilibré (recommandé)",
-        modeFast: "⚡ Rapide (30-40% plus rapide)",
+        modeFast: "⚡ Rapide",
         modeQuality: "🏆 Qualité maximale",
 
         // Model
@@ -82,7 +82,7 @@ window.translations = {
         fileLabel: "Fichier:",
 
         modeBalancedLog: "⚖️ Mode équilibré (segment 7)",
-        modeFastLog: "⚡ Mode rapide activé (quantized + segment 7)",
+        modeFastLog: "⚡ Mode rapide activé (décalages et chevauchement réduits)",
         modeQualityLog: "🏆 Mode qualité maximale",
 
         separationInProgress: "Séparation en cours (cela peut prendre plusieurs minutes)...",
@@ -136,7 +136,7 @@ window.translations = {
         renameError: "Erreur de renommage:",
 
         // Footer
-        version: "v2.4.7 - Robust",
+        version: "v2.4.8 - Robust",
         poweredBy: "Propulsé par Demucs AI"
     },
 
@@ -176,7 +176,7 @@ window.translations = {
         // Processing mode
         processingMode: "Processing mode:",
         modeBalanced: "⚖️ Balanced (recommended)",
-        modeFast: "⚡ Fast (30-40% faster)",
+        modeFast: "⚡ Fast",
         modeQuality: "🏆 Maximum quality",
 
         // Model
@@ -217,7 +217,7 @@ window.translations = {
         fileLabel: "File:",
 
         modeBalancedLog: "⚖️ Balanced mode (segment 7)",
-        modeFastLog: "⚡ Fast mode enabled (quantized + segment 7)",
+        modeFastLog: "⚡ Fast mode enabled (reduced shifts and overlap)",
         modeQualityLog: "🏆 Maximum quality mode",
 
         separationInProgress: "Separation in progress (this may take several minutes)...",
@@ -271,7 +271,7 @@ window.translations = {
         renameError: "Rename error:",
 
         // Footer
-        version: "v2.4.7 - Robust",
+        version: "v2.4.8 - Robust",
         poweredBy: "Powered by Demucs AI"
     }
 };
@@ -298,7 +298,7 @@ window.translations.es = Object.assign({}, window.translations.en, {
     autoImport: "Importar automáticamente al proyecto",
     processingMode: "Modo de procesamiento:",
     modeBalanced: "⚖️ Equilibrado (recomendado)",
-    modeFast: "⚡ Rápido (30-40% más rápido)",
+    modeFast: "⚡ Rápido",
     modeQuality: "🏆 Calidad máxima",
     model: "Modelo:",
     modelHtdemucs: "HTDemucs (rápido)",
@@ -362,7 +362,7 @@ window.translations.de = Object.assign({}, window.translations.en, {
     autoImport: "Automatisch ins Projekt importieren",
     processingMode: "Verarbeitungsmodus:",
     modeBalanced: "⚖️ Ausgewogen (empfohlen)",
-    modeFast: "⚡ Schnell (30-40% schneller)",
+    modeFast: "⚡ Schnell",
     modeQuality: "🏆 Maximale Qualität",
     model: "Modell:",
     modelHtdemucs: "HTDemucs (schnell)",
@@ -424,7 +424,7 @@ window.translations["pt-BR"] = Object.assign({}, window.translations.en, {
     autoImport: "Importar automaticamente para o projeto",
     processingMode: "Modo de processamento:",
     modeBalanced: "⚖️ Equilibrado (recomendado)",
-    modeFast: "⚡ Rápido (30-40% mais rápido)",
+    modeFast: "⚡ Rápido",
     modeQuality: "🏆 Qualidade máxima",
     model: "Modelo:",
     modelHtdemucs: "HTDemucs (rápido)",
@@ -488,7 +488,7 @@ window.translations.ja = Object.assign({}, window.translations.en, {
     autoImport: "プロジェクトに自動読み込み",
     processingMode: "処理モード:",
     modeBalanced: "⚖️ バランス (推奨)",
-    modeFast: "⚡ 高速 (30-40%高速)",
+    modeFast: "⚡ 高速",
     modeQuality: "🏆 最高品質",
     model: "モデル:",
     modelHtdemucs: "HTDemucs (高速)",
@@ -551,7 +551,7 @@ window.translations.it = Object.assign({}, window.translations.en, {
     autoImport: "Importa automaticamente nel progetto",
     processingMode: "Modalità di elaborazione:",
     modeBalanced: "⚖️ Bilanciato (consigliato)",
-    modeFast: "⚡ Veloce (30-40% più veloce)",
+    modeFast: "⚡ Veloce",
     modeQuality: "🏆 Qualità massima",
     model: "Modello:",
     modelHtdemucs: "HTDemucs (veloce)",
@@ -615,7 +615,7 @@ window.translations["zh-CN"] = Object.assign({}, window.translations.en, {
     autoImport: "自动导入到项目",
     processingMode: "处理模式:",
     modeBalanced: "⚖️ 均衡 (推荐)",
-    modeFast: "⚡ 快速 (快 30-40%)",
+    modeFast: "⚡ 快速",
     modeQuality: "🏆 最高质量",
     model: "模型:",
     modelHtdemucs: "HTDemucs (快速)",
@@ -678,7 +678,7 @@ window.translations.ru = Object.assign({}, window.translations.en, {
     autoImport: "Автоимпорт в проект",
     processingMode: "Режим обработки:",
     modeBalanced: "⚖️ Сбалансированный (рекомендуется)",
-    modeFast: "⚡ Быстрый (на 30-40% быстрее)",
+    modeFast: "⚡ Быстрый",
     modeQuality: "🏆 Максимальное качество",
     model: "Модель:",
     modelHtdemucs: "HTDemucs (быстро)",

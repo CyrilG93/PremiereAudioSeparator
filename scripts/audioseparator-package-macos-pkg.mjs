@@ -16,6 +16,9 @@ const packagesDir = path.join(stagingRoot, "packages");
 const coreScriptsDir = path.join(stagingRoot, "core-scripts");
 const releasesDir = path.join(projectRoot, "Releases");
 const pythonVersion = process.env.AUDIOSEP_PRIVATE_PYTHON_VERSION || "3.11.8";
+const demucsVersion = process.env.AUDIOSEP_DEMUCS_VERSION || "4.1.0";
+const torchVersion = process.env.AUDIOSEP_TORCH_VERSION || "2.13.0";
+const numpyVersion = process.env.AUDIOSEP_NUMPY_VERSION || "2.4.6";
 const requestedArch = process.env.AUDIOSEP_MAC_ARCH || process.arch;
 const macArch = requestedArch === "x64" ? "x86_64" : requestedArch;
 const rebuildRuntime = process.env.AUDIOSEP_REBUILD_RUNTIME === "1";
@@ -23,6 +26,26 @@ const reuseStaging = process.env.AUDIOSEP_REUSE_STAGING === "1";
 const ffmpegVersion = process.env.AUDIOSEP_FFMPEG_VERSION || "8.0.2";
 const ffmpegSourceUrl =
   process.env.AUDIOSEP_FFMPEG_SOURCE_URL || `https://ffmpeg.org/releases/ffmpeg-${ffmpegVersion}.tar.xz`;
+const ffmpegSourceSha256 =
+  process.env.AUDIOSEP_FFMPEG_SOURCE_SHA256 ||
+  "5d16962332603c427b3d0887fc12b9166d6ee2cb1108b1865dd2d5eb06a09505";
+const runtimeSmokeCode = [
+  "from importlib.metadata import version",
+  "from pathlib import Path",
+  "import os, tempfile, numpy, torch",
+  "from demucs.audio import save_audio",
+  `assert version('demucs') == '${demucsVersion}'`,
+  `assert torch.__version__.split('+')[0] == '${torchVersion}'`,
+  `assert numpy.__version__ == '${numpyVersion}'`,
+  "fd, name = tempfile.mkstemp(suffix='.wav')",
+  "os.close(fd)",
+  "os.unlink(name)",
+  "output = Path(name)",
+  "save_audio(torch.zeros(2, 4410), output, 44100)",
+  "assert output.stat().st_size > 44",
+  "output.unlink()",
+  "print('demucs runtime and WAV output ok', version('demucs'), torch.__version__)"
+].join("; ");
 
 function runCommand(command, args, options = {}) {
   // // Execute build and packaging commands with visible progress and strict exit handling.
@@ -83,9 +106,13 @@ async function hashFile(targetPath) {
   });
 }
 
-async function downloadFile(url, targetPath) {
-  // // Download runtime build assets once and reuse them across packaging runs.
+async function downloadFile(url, targetPath, expectedSha256) {
+  // // Download runtime build assets once and reject unexpected or corrupted content.
   if (await pathExists(targetPath)) {
+    const cachedHash = await hashFile(targetPath);
+    if (cachedHash !== expectedSha256) {
+      throw new Error(`Cached download hash mismatch for ${targetPath}.`);
+    }
     return;
   }
 
@@ -101,6 +128,11 @@ async function downloadFile(url, targetPath) {
     "--output",
     targetPath
   ]);
+  const downloadedHash = await hashFile(targetPath);
+  if (downloadedHash !== expectedSha256) {
+    await rm(targetPath, { force: true });
+    throw new Error(`Downloaded file hash mismatch for ${url}.`);
+  }
 }
 
 async function readPackageVersion() {
@@ -175,7 +207,9 @@ async function preparePrivatePython() {
       "--break-system-packages",
       "--upgrade",
       "--no-cache",
-      "demucs"
+      `demucs==${demucsVersion}`,
+      `torch==${torchVersion}`,
+      `numpy==${numpyVersion}`
     ],
     {
       env: {
@@ -186,13 +220,14 @@ async function preparePrivatePython() {
   );
 
   await prunePrivatePython(targetPythonDir);
-  await runCommand(pythonPath, ["-c", "import demucs, torch; print('demucs runtime ok', torch.__version__)"], {
+  await runCommand(pythonPath, ["-c", runtimeSmokeCode], {
     env: {
       PYTHONNOUSERSITE: "1",
       PYTHONPATH: ""
     }
   });
-  await writeFile(path.join(runtimeRoot, ".audioseparator-python-validated"), `${macArch}:${pythonVersion}\n`, "ascii");
+  const validationValue = `${macArch}:${pythonVersion}:${demucsVersion}:${torchVersion}:${numpyVersion}\n`;
+  await writeFile(path.join(runtimeRoot, ".audioseparator-python-validated"), validationValue, "ascii");
 }
 
 async function prunePrivatePython(pythonDir) {
@@ -212,7 +247,7 @@ async function preparePrivateFfmpeg() {
   const sourceParent = path.join(stagingRoot, "ffmpeg-source");
   const sourceDir = path.join(sourceParent, `ffmpeg-${ffmpegVersion}`);
   const installDir = path.join(runtimeRoot, "ffmpeg");
-  await downloadFile(ffmpegSourceUrl, sourceArchive);
+  await downloadFile(ffmpegSourceUrl, sourceArchive, ffmpegSourceSha256);
   await rm(sourceParent, { recursive: true, force: true });
   await mkdir(sourceParent, { recursive: true });
   await runCommand("tar", ["-xJf", sourceArchive, "-C", sourceParent]);
@@ -264,14 +299,14 @@ async function prepareRuntimePayload(runtimeVersion) {
 
   const pythonPath = path.join(runtimeRoot, "python", "bin", "python3");
   const pythonValidationPath = path.join(runtimeRoot, ".audioseparator-python-validated");
-  const expectedPythonValidation = `${macArch}:${pythonVersion}`;
+  const expectedPythonValidation = `${macArch}:${pythonVersion}:${demucsVersion}:${torchVersion}:${numpyVersion}`;
   let canReusePython = false;
   if (reuseStaging && (await pathExists(pythonPath)) && (await pathExists(pythonValidationPath))) {
     const validationValue = String(await readFile(pythonValidationPath, "utf8")).trim();
     canReusePython = validationValue === expectedPythonValidation;
   }
   if (canReusePython) {
-    await runCommand(pythonPath, ["-c", "import demucs, torch; print('demucs runtime ok', torch.__version__)"]);
+    await runCommand(pythonPath, ["-c", runtimeSmokeCode]);
   } else {
     await preparePrivatePython();
   }
@@ -286,6 +321,9 @@ async function prepareRuntimePayload(runtimeVersion) {
   }
 
   await writeFile(path.join(runtimeRoot, ".audioseparator-runtime-version"), `${runtimeVersion}\n`, "ascii");
+  // // Remove extended attributes before archiving so macOS does not create AppleDouble files.
+  await prunePackagingMetadata(runtimeRoot);
+  await runCommand("xattr", ["-cr", runtimeRoot]);
 }
 
 async function createRuntimeArchive(version) {
@@ -305,7 +343,12 @@ async function createRuntimeArchive(version) {
   await prepareRuntimePayload(version);
   await mkdir(releasesDir, { recursive: true });
   await rm(outputPath, { force: true });
-  await runCommand("tar", ["-czf", outputPath, "runtime"], { cwd: stagingRoot });
+  await runCommand("tar", ["-czf", outputPath, "runtime"], {
+    cwd: stagingRoot,
+    env: {
+      COPYFILE_DISABLE: "1"
+    }
+  });
   const sha256 = await hashFile(outputPath);
   process.stdout.write(`macOS runtime asset created at ${outputPath}\n`);
   return { assetName, sha256 };
@@ -332,7 +375,7 @@ async function copyExtensionPayload(targetDir) {
   for (const dirName of ["client", "host", "CSXS"]) {
     await cp(path.join(projectRoot, dirName), path.join(targetDir, dirName), { recursive: true });
   }
-  for (const fileName of [".debug", "README.md", "UPDATE_DEPENDENCIES.sh"]) {
+  for (const fileName of [".debug", "README.md"]) {
     const sourcePath = path.join(projectRoot, fileName);
     if (await pathExists(sourcePath)) {
       await cp(sourcePath, path.join(targetDir, fileName));
@@ -364,6 +407,9 @@ async function copyCorePayload(runtimeAsset, version) {
     `AUDIOSEP_EXTENSION_VERSION=${shellQuote(version)}`,
     `AUDIOSEP_RUNTIME_VERSION=${shellQuote(version)}`,
     `AUDIOSEP_RUNTIME_ARCH=${shellQuote(macArch)}`,
+    `AUDIOSEP_DEMUCS_VERSION=${shellQuote(demucsVersion)}`,
+    `AUDIOSEP_TORCH_VERSION=${shellQuote(torchVersion)}`,
+    `AUDIOSEP_NUMPY_VERSION=${shellQuote(numpyVersion)}`,
     `AUDIOSEP_RUNTIME_ASSET_NAME=${shellQuote(runtimeAsset.assetName)}`,
     `AUDIOSEP_RUNTIME_SHA256=${shellQuote(String(runtimeAsset.sha256 || "").toLowerCase())}`,
     ""
@@ -416,6 +462,32 @@ async function createDistribution(version) {
   return distributionPath;
 }
 
+async function validateInstallerContents(outputPath) {
+  // // Expand the final PKG and reject legacy updaters or AppleDouble metadata before release.
+  const validationDir = path.join(stagingRoot, "package-validation");
+  const expandedScripts = path.join(validationDir, "AudioSeparatorCore.pkg", "Scripts");
+  const extractedScripts = path.join(validationDir, "scripts-content");
+  await rm(validationDir, { recursive: true, force: true });
+  try {
+    await runCommand("pkgutil", ["--expand", outputPath, validationDir]);
+    await mkdir(extractedScripts, { recursive: true });
+    const validationScript = [
+      "set -eu",
+      `archive=${shellQuote(expandedScripts)}`,
+      `content=${shellQuote(extractedScripts)}`,
+      '(cd "$content" && gzip -dc "$archive" | cpio -idm >/dev/null 2>&1)',
+      'if find "$content" -name "._*" -print -quit | grep -q .; then echo "AppleDouble metadata found in PKG." >&2; exit 1; fi',
+      'if find "$content" -name "UPDATE_DEPENDENCIES.sh" -print -quit | grep -q .; then echo "Legacy updater found in PKG." >&2; exit 1; fi',
+      'runtime_archive="$(find "$content/runtime" -name "*.tar.gz" -print -quit)"',
+      'if [ -z "$runtime_archive" ]; then echo "Bundled runtime archive is missing from PKG." >&2; exit 1; fi',
+      'if tar -tzf "$runtime_archive" | grep -E "(^|/)\\._" >/dev/null; then echo "AppleDouble metadata found in runtime archive." >&2; exit 1; fi'
+    ].join("\n");
+    await runCommand("/bin/bash", ["-c", validationScript]);
+  } finally {
+    await rm(validationDir, { recursive: true, force: true });
+  }
+}
+
 async function createInstallerPackage(version, runtimeAsset) {
   // // Build the user-facing product package and optionally sign/notarize it for public distribution.
   await copyCorePayload(runtimeAsset, version);
@@ -456,13 +528,9 @@ async function createInstallerPackage(version, runtimeAsset) {
     await runCommand("xcrun", ["stapler", "staple", outputPath]);
   }
 
+  await validateInstallerContents(outputPath);
   if (signingIdentity) {
     await runCommand("pkgutil", ["--check-signature", outputPath]);
-  } else {
-    const validationDir = path.join(stagingRoot, "package-validation");
-    await rm(validationDir, { recursive: true, force: true });
-    await runCommand("pkgutil", ["--expand", outputPath, validationDir]);
-    await rm(validationDir, { recursive: true, force: true });
   }
   process.stdout.write(`macOS installer created at ${outputPath}\n`);
 }
@@ -482,7 +550,10 @@ async function main() {
   }
 
   if (!reuseStaging) {
-    await rm(stagingRoot, { recursive: true, force: true });
+    // // Preserve downloaded source archives while rebuilding generated payloads from scratch.
+    await rm(runtimeRoot, { recursive: true, force: true });
+    await rm(packagesDir, { recursive: true, force: true });
+    await rm(coreScriptsDir, { recursive: true, force: true });
   }
   await mkdir(downloadsDir, { recursive: true });
   await mkdir(releasesDir, { recursive: true });

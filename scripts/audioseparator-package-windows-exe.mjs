@@ -9,36 +9,66 @@ import { spawn } from "node:child_process";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..");
-const stagingRoot = path.join(projectRoot, ".audioseparator-windows-staging");
+// // Keep staging paths short because recent Torch license trees exceed legacy Windows path limits.
+const stagingRoot = path.resolve(
+  process.env.AUDIOSEP_WINDOWS_STAGING_DIR || path.join(process.env.TEMP || projectRoot, "AudioSeparatorWindowsBuild")
+);
 const downloadsDir = path.join(stagingRoot, "downloads");
 const payloadRoot = path.join(stagingRoot, "payload");
 const runtimeRoot = path.join(payloadRoot, "runtime");
 const installerRoot = path.join(stagingRoot, "installer");
 const releasesDir = path.join(projectRoot, "Releases");
-const runtimeManifestPath = path.join(projectRoot, "installers", "windows-runtime.json");
 const pythonVersion = process.env.AUDIOSEP_WINDOWS_PYTHON_VERSION || "3.11.8";
+const demucsVersion = process.env.AUDIOSEP_DEMUCS_VERSION || "4.1.0";
+const torchVersion = process.env.AUDIOSEP_TORCH_VERSION || "2.13.0";
+const numpyVersion = process.env.AUDIOSEP_NUMPY_VERSION || "2.4.6";
 const pythonShortVersion = pythonVersion.split(".").slice(0, 2).join("");
 const pythonEmbedUrl =
   process.env.AUDIOSEP_WINDOWS_PYTHON_EMBED_URL ||
   `https://www.python.org/ftp/python/${pythonVersion}/python-${pythonVersion}-embed-amd64.zip`;
+const pythonEmbedSha256 =
+  process.env.AUDIOSEP_WINDOWS_PYTHON_EMBED_SHA256 ||
+  "6347068ca56bf4dd6319f7ef5695f5a03f1ade3e9aa2d6a095ab27faa77a1290";
 const getPipUrl = process.env.AUDIOSEP_WINDOWS_GET_PIP_URL || "https://bootstrap.pypa.io/get-pip.py";
+const getPipSha256 =
+  process.env.AUDIOSEP_WINDOWS_GET_PIP_SHA256 ||
+  "a341e1a43e38001c551a1508a73ff23636a11970b61d901d9a1cad2a18f57055";
 const ffmpegZipUrl =
   process.env.AUDIOSEP_WINDOWS_FFMPEG_ZIP_URL ||
-  "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-lgpl.zip";
+  "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-07-18-13-13/ffmpeg-N-125658-g0869e710e6-win64-lgpl.zip";
+const ffmpegZipSha256 =
+  process.env.AUDIOSEP_WINDOWS_FFMPEG_ZIP_SHA256 ||
+  "0f585b6f171104b6cb033a6c4b14edaee13ba43121c954b46e211437c44a23fe";
 const innoSetupUrl =
   process.env.AUDIOSEP_WINDOWS_INNO_SETUP_URL ||
   "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe";
+const innoSetupSha256 =
+  process.env.AUDIOSEP_WINDOWS_INNO_SETUP_SHA256 ||
+  "9c73c3bae7ed48d44112a0f48e66742c00090bdb5bef71d9d3c056c66e97b732";
 const reuseStaging = process.env.AUDIOSEP_WINDOWS_REUSE_STAGING === "1";
-const rebuildRuntime = process.env.AUDIOSEP_WINDOWS_REBUILD_RUNTIME === "1";
-const skipRuntimeAssetDownload = process.env.AUDIOSEP_WINDOWS_SKIP_RUNTIME_ASSET_DOWNLOAD === "1";
-const fullOnly = process.env.AUDIOSEP_WINDOWS_FULL_ONLY === "1";
-const lightOnly = process.env.AUDIOSEP_WINDOWS_LIGHT_ONLY === "1";
 const privatePythonEnv = {
   PYTHONUTF8: "1",
   PYTHONNOUSERSITE: "1",
   PYTHONPATH: "",
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
 };
+const runtimeSmokeCode = [
+  "from importlib.metadata import version",
+  "from pathlib import Path",
+  "import os, tempfile, numpy, torch",
+  "from demucs.audio import save_audio",
+  `assert version('demucs') == '${demucsVersion}'`,
+  `assert torch.__version__.split('+')[0] == '${torchVersion}'`,
+  `assert numpy.__version__ == '${numpyVersion}'`,
+  "fd, name = tempfile.mkstemp(suffix='.wav')",
+  "os.close(fd)",
+  "os.unlink(name)",
+  "output = Path(name)",
+  "save_audio(torch.zeros(2, 4410), output, 44100)",
+  "assert output.stat().st_size > 44",
+  "output.unlink()",
+  "print('demucs runtime and WAV output ok', version('demucs'), torch.__version__)"
+].join("; ");
 
 function runCommand(command, args, options = {}) {
   // // Execute build tools with inherited output so long downloads and Inno compiles stay visible.
@@ -85,9 +115,13 @@ async function hashFile(targetPath) {
   });
 }
 
-async function downloadFile(url, targetPath) {
-  // // Download third-party archives only once into the Windows staging cache.
+async function downloadFile(url, targetPath, expectedSha256) {
+  // // Download third-party archives once and reject any unexpected or corrupted content.
   if (await pathExists(targetPath)) {
+    const cachedHash = await hashFile(targetPath);
+    if (cachedHash !== expectedSha256) {
+      throw new Error(`Cached download hash mismatch for ${targetPath}.`);
+    }
     return;
   }
 
@@ -99,6 +133,11 @@ async function downloadFile(url, targetPath) {
     "-Command",
     `$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri ${JSON.stringify(url)} -OutFile ${JSON.stringify(targetPath)}`
   ]);
+  const downloadedHash = await hashFile(targetPath);
+  if (downloadedHash !== expectedSha256) {
+    await rm(targetPath, { force: true });
+    throw new Error(`Downloaded file hash mismatch for ${url}.`);
+  }
 }
 
 async function expandArchive(zipPath, targetDir) {
@@ -153,11 +192,11 @@ async function preparePythonRuntime() {
   const runtimePythonDir = path.join(runtimeRoot, "python");
   const pythonExe = path.join(runtimePythonDir, "python.exe");
 
-  await downloadFile(pythonEmbedUrl, pythonZip);
+  await downloadFile(pythonEmbedUrl, pythonZip, pythonEmbedSha256);
   await expandArchive(pythonZip, runtimePythonDir);
   await configureEmbeddedPython(runtimePythonDir);
 
-  await downloadFile(getPipUrl, getPipPath);
+  await downloadFile(getPipUrl, getPipPath, getPipSha256);
   await runCommand(pythonExe, [getPipPath, "--no-warn-script-location"], {
     env: privatePythonEnv
   });
@@ -168,7 +207,9 @@ async function preparePythonRuntime() {
     "--upgrade",
     "--no-cache-dir",
     "--no-warn-script-location",
-    "demucs"
+    `demucs==${demucsVersion}`,
+    `torch==${torchVersion}`,
+    `numpy==${numpyVersion}`
   ], {
     env: privatePythonEnv
   });
@@ -176,6 +217,8 @@ async function preparePythonRuntime() {
   await prunePythonRuntime(runtimePythonDir);
   await lockEmbeddedPythonRuntime(runtimePythonDir);
   await validatePythonRuntime();
+  const validationValue = `${pythonVersion}:${demucsVersion}:${torchVersion}:${numpyVersion}\r\n`;
+  await writeFile(path.join(runtimeRoot, ".audioseparator-python-validated"), validationValue, "ascii");
 }
 
 async function validatePythonRuntime() {
@@ -193,7 +236,7 @@ async function validatePythonRuntime() {
     [
       `$python = ${JSON.stringify(pythonExe)};`,
       "Unblock-File -LiteralPath $python -ErrorAction SilentlyContinue;",
-      "& $python -c \"import demucs, torch; print('demucs runtime ok', torch.__version__)\";",
+      `& $python -c ${JSON.stringify(runtimeSmokeCode)};`,
       "exit $LASTEXITCODE"
     ].join(" ")
   ], {
@@ -209,7 +252,7 @@ async function prepareFfmpegRuntime() {
   const runtimeFfmpegDir = path.join(runtimeRoot, "ffmpeg");
 
   if (!localFfmpegZip) {
-    await downloadFile(ffmpegZipUrl, ffmpegZip);
+    await downloadFile(ffmpegZipUrl, ffmpegZip, ffmpegZipSha256);
   }
 
   await expandArchive(ffmpegZip, extractedDir);
@@ -248,7 +291,7 @@ async function validateFfmpegRuntime() {
   await runCommand(runtimeFfprobeExe, ["-version"]);
 }
 
-async function prepareRuntimePayload(runtimeManifest) {
+async function prepareRuntimePayload(runtimeVersion) {
   // // Build or reuse the private runtime folder that gets embedded in Full installers.
   if (!reuseStaging) {
     await rm(runtimeRoot, { recursive: true, force: true });
@@ -256,7 +299,14 @@ async function prepareRuntimePayload(runtimeManifest) {
   await mkdir(runtimeRoot, { recursive: true });
 
   const pythonExe = path.join(runtimeRoot, "python", "python.exe");
-  if (reuseStaging && (await pathExists(pythonExe))) {
+  const pythonValidationPath = path.join(runtimeRoot, ".audioseparator-python-validated");
+  const expectedPythonValidation = `${pythonVersion}:${demucsVersion}:${torchVersion}:${numpyVersion}`;
+  let canReusePython = false;
+  if (reuseStaging && (await pathExists(pythonExe)) && (await pathExists(pythonValidationPath))) {
+    const validationValue = String(await readFile(pythonValidationPath, "utf8")).trim();
+    canReusePython = validationValue === expectedPythonValidation;
+  }
+  if (canReusePython) {
     await validatePythonRuntime();
   } else {
     await preparePythonRuntime();
@@ -270,7 +320,7 @@ async function prepareRuntimePayload(runtimeManifest) {
     await prepareFfmpegRuntime();
   }
 
-  await writeFile(path.join(runtimeRoot, ".audioseparator-runtime-version"), `${runtimeManifest.version}\r\n`, "ascii");
+  await writeFile(path.join(runtimeRoot, ".audioseparator-runtime-version"), `${runtimeVersion}\r\n`, "ascii");
 }
 
 async function copyExtensionPayload() {
@@ -281,7 +331,7 @@ async function copyExtensionPayload() {
   for (const dirName of ["client", "host", "CSXS"]) {
     await cp(path.join(projectRoot, dirName), path.join(distDir, dirName), { recursive: true });
   }
-  for (const fileName of [".debug", "README.md", "UPDATE_DEPENDENCIES.bat"]) {
+  for (const fileName of [".debug", "README.md"]) {
     const sourcePath = path.join(projectRoot, fileName);
     if (await pathExists(sourcePath)) {
       await cp(sourcePath, path.join(distDir, fileName));
@@ -324,7 +374,7 @@ async function prepareInnoCompiler() {
 
   const installerPath = path.join(downloadsDir, "innosetup.exe");
   const installDir = path.join(stagingRoot, "tools", "Inno");
-  await downloadFile(innoSetupUrl, installerPath);
+  await downloadFile(innoSetupUrl, installerPath, innoSetupSha256);
   await mkdir(installDir, { recursive: true });
   await runCommand("powershell", [
     "-NoProfile",
@@ -363,103 +413,10 @@ async function readPackageVersion() {
   return String(JSON.parse(raw).version || "").trim();
 }
 
-async function readRuntimeManifest() {
-  // // Runtime metadata lets future light installers download an immutable runtime asset.
-  const raw = await readFile(runtimeManifestPath, "utf8");
-  const parsed = JSON.parse(raw);
-  return {
-    version: String(parsed.version || "").trim(),
-    releaseTag: String(parsed.releaseTag || "").trim(),
-    assetName: String(parsed.assetName || "").trim(),
-    sha256: String(parsed.sha256 || "").trim().toLowerCase()
-  };
-}
-
-async function writeRuntimeManifest(manifest) {
-  // // Persist the compiled runtime hash so connected installers can verify downloads.
-  await writeFile(runtimeManifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
-}
-
-async function createRuntimeInstaller(compilerPath, runtimeManifest) {
-  // // Package the reusable private runtime as a standalone EXE for future lightweight installs.
-  const outputPath = path.join(releasesDir, runtimeManifest.assetName);
-  if (!rebuildRuntime && runtimeManifest.sha256 && (await pathExists(outputPath))) {
-    const localHash = await hashFile(outputPath);
-    if (localHash === runtimeManifest.sha256) {
-      return runtimeManifest;
-    }
-    throw new Error(`Local runtime asset hash does not match ${runtimeManifestPath}.`);
-  }
-
-  if (!rebuildRuntime && runtimeManifest.sha256 && skipRuntimeAssetDownload) {
-    process.stdout.write(`Reusing published Windows runtime metadata for ${runtimeManifest.assetName}.\n`);
-    return runtimeManifest;
-  }
-
-  if (!rebuildRuntime && runtimeManifest.sha256 && !(await pathExists(outputPath))) {
-    const publishedUrl =
-      process.env.AUDIOSEP_WINDOWS_RUNTIME_DOWNLOAD_URL ||
-      `https://github.com/CyrilG93/PremierePro-AudioSeparator/releases/download/${runtimeManifest.releaseTag}/${runtimeManifest.assetName}`;
-    await downloadFile(publishedUrl, outputPath);
-    const publishedHash = await hashFile(outputPath);
-    if (publishedHash !== runtimeManifest.sha256) {
-      throw new Error(`Published runtime asset hash does not match ${runtimeManifestPath}.`);
-    }
-    return runtimeManifest;
-  }
-
-  const scriptPath = path.join(installerRoot, "AudioSeparatorRuntime.iss");
-  const runtimeOutputBaseName = path.parse(runtimeManifest.assetName).name;
-  const iss = [
-    "; // Generated by audioseparator-package-windows-exe.mjs.",
-    "[Setup]",
-    "AppId={{F9B7641B-970D-4E2D-AD8C-B96C607B1512}",
-    "AppName=Audio Separator Private Runtime",
-    `AppVersion=${runtimeManifest.version}`,
-    "AppPublisher=Cyril Plugin",
-    "DefaultDirName={localappdata}\\PremierePro-AudioSeparator\\runtime",
-    "DisableDirPage=yes",
-    "DisableProgramGroupPage=yes",
-    "Uninstallable=no",
-    "PrivilegesRequired=lowest",
-    "RestartIfNeededByRun=no",
-    "ArchitecturesAllowed=x64compatible",
-    "ArchitecturesInstallIn64BitMode=x64compatible",
-    "Compression=lzma2/ultra64",
-    "SolidCompression=yes",
-    "WizardStyle=modern",
-    `OutputDir=${escapeInnoString(releasesDir)}`,
-    `OutputBaseFilename=${runtimeOutputBaseName}`,
-    "",
-    "[InstallDelete]",
-    'Type: filesandordirs; Name: "{localappdata}\\PremierePro-AudioSeparator\\runtime"',
-    "",
-    "[Files]",
-    `Source: "${escapeInnoString(path.join(runtimeRoot, "*"))}"; DestDir: "{localappdata}\\PremierePro-AudioSeparator\\runtime"; Flags: recursesubdirs createallsubdirs ignoreversion`,
-    ""
-  ].join("\r\n");
-
-  await mkdir(installerRoot, { recursive: true });
-  await mkdir(releasesDir, { recursive: true });
-  await rm(outputPath, { force: true });
-  await writeFile(scriptPath, iss, "utf8");
-  await runCommand(compilerPath, ["/Qp", scriptPath]);
-
-  const sha256 = await hashFile(outputPath);
-  const finalizedManifest = { ...runtimeManifest, sha256 };
-  await writeRuntimeManifest(finalizedManifest);
-  process.stdout.write(`Windows runtime asset created at ${outputPath}\n`);
-  return finalizedManifest;
-}
-
-async function createUserInstaller(compilerPath, version, runtimeManifest, mode) {
-  // // Build either a full installer with embedded runtime or a light installer that downloads it.
-  const includeRuntime = mode === "full";
-  const outputBaseName = `AudioSeparator-v${version}-Windows-${includeRuntime ? "Full" : "Light"}-Installer`;
-  const scriptPath = path.join(installerRoot, `AudioSeparator${includeRuntime ? "Full" : "Light"}.iss`);
-  const runtimeUrl =
-    process.env.AUDIOSEP_WINDOWS_RUNTIME_DOWNLOAD_URL ||
-    `https://github.com/CyrilG93/PremierePro-AudioSeparator/releases/download/${runtimeManifest.releaseTag}/${runtimeManifest.assetName}`;
+async function createUserInstaller(compilerPath, version) {
+  // // Build the single supported Windows Full installer with its private runtime embedded.
+  const outputBaseName = `AudioSeparator-v${version}-Windows-Full-Installer`;
+  const scriptPath = path.join(installerRoot, "AudioSeparatorFull.iss");
   const iss = [
     "; // Generated by audioseparator-package-windows-exe.mjs.",
     "[Setup]",
@@ -476,7 +433,8 @@ async function createUserInstaller(compilerPath, version, runtimeManifest, mode)
     "RestartIfNeededByRun=no",
     "ArchitecturesAllowed=x64compatible",
     "ArchitecturesInstallIn64BitMode=x64compatible",
-    "Compression=lzma2/ultra64",
+    // // Keep Full installer compression practical for local and CI release builds.
+    "Compression=lzma2/max",
     "SolidCompression=yes",
     "WizardStyle=modern dynamic",
     `OutputDir=${escapeInnoString(releasesDir)}`,
@@ -486,53 +444,15 @@ async function createUserInstaller(compilerPath, version, runtimeManifest, mode)
     `Source: "${escapeInnoString(path.join(payloadRoot, "README.md"))}"; DestDir: "{tmp}\\AudioSeparatorPayload"; Flags: ignoreversion`,
     `Source: "${escapeInnoString(path.join(payloadRoot, "dist", "PremierePro-AudioSeparator", "*"))}"; DestDir: "{tmp}\\AudioSeparatorPayload\\dist\\PremierePro-AudioSeparator"; Flags: recursesubdirs createallsubdirs ignoreversion`,
     `Source: "${escapeInnoString(path.join(payloadRoot, "installers", "audioseparator_install_windows_private_runtime.ps1"))}"; DestDir: "{tmp}\\AudioSeparatorPayload\\installers"; Flags: ignoreversion`,
-    ...(includeRuntime
-      ? [`Source: "${escapeInnoString(path.join(runtimeRoot, "*"))}"; DestDir: "{tmp}\\AudioSeparatorPayload\\runtime"; Flags: recursesubdirs createallsubdirs ignoreversion`]
-      : []),
+    `Source: "${escapeInnoString(path.join(runtimeRoot, "*"))}"; DestDir: "{tmp}\\AudioSeparatorPayload\\runtime"; Flags: recursesubdirs createallsubdirs ignoreversion`,
     `Source: "${escapeInnoString(path.join(payloadRoot, "README.md"))}"; DestDir: "{tmp}\\AudioSeparatorPayload"; DestName: "install-ready.txt"; Flags: ignoreversion; AfterInstall: InstallAudioSeparator`,
     "",
     "[Code]",
     "var",
-    "  DownloadPage: TDownloadWizardPage;",
     "  ReadyWarningLabel: TNewStaticText;",
-    "  DownloadRuntime: Boolean;",
-    "",
-    "function RuntimeIsCurrent: Boolean;",
-    "var",
-    "  InstalledVersion: AnsiString;",
-    "  RuntimeRoot: String;",
-    "  VersionFile: String;",
-    "begin",
-    "  RuntimeRoot := ExpandConstant('{localappdata}\\PremierePro-AudioSeparator\\runtime');",
-    "  VersionFile := RuntimeRoot + '\\.audioseparator-runtime-version';",
-    "  if FileExists(VersionFile) then",
-    "  begin",
-    "    Result := LoadStringFromFile(VersionFile, InstalledVersion) and",
-    `      (Trim(String(InstalledVersion)) = '${escapePascalString(runtimeManifest.version)}') and`,
-    "      FileExists(RuntimeRoot + '\\python\\python.exe') and",
-    "      FileExists(RuntimeRoot + '\\ffmpeg\\bin\\ffmpeg.exe') and",
-    "      FileExists(RuntimeRoot + '\\ffmpeg\\bin\\ffprobe.exe');",
-    "  end",
-    "  else",
-    "  begin",
-    "    Result :=",
-    "      FileExists(RuntimeRoot + '\\python\\python.exe') and",
-    "      FileExists(RuntimeRoot + '\\ffmpeg\\bin\\ffmpeg.exe') and",
-    "      FileExists(RuntimeRoot + '\\ffmpeg\\bin\\ffprobe.exe');",
-    "  end;",
-    "end;",
-    "",
-    "function ShouldInstallRuntime: Boolean;",
-    "begin",
-    "  Result := DownloadRuntime;",
-    "end;",
     "",
     "procedure InitializeWizard;",
     "begin",
-    "  DownloadPage := CreateDownloadPage('Downloading Audio Separator files',",
-    "    'The first installation can take several minutes. Plugin-only updates stay lightweight.', nil);",
-    "  DownloadPage.ShowBaseNameInsteadOfUrl := True;",
-    "",
     "  WizardForm.ReadyMemo.Visible := False;",
     "  ReadyWarningLabel := TNewStaticText.Create(WizardForm);",
     "  ReadyWarningLabel.Parent := WizardForm.ReadyPage;",
@@ -546,69 +466,12 @@ async function createUserInstaller(compilerPath, version, runtimeManifest, mode)
     "  ReadyWarningLabel.Caption := 'Important: the first install includes Python, Demucs, PyTorch and FFmpeg. Windows may appear busy while checking the files; please wait.';",
     "end;",
     "",
-    "function NextButtonClick(CurPageID: Integer): Boolean;",
-    "var",
-    "  Error: String;",
-    "begin",
-    "  if CurPageID = wpReady then",
-    "  begin",
-    "    DownloadPage.Clear;",
-    `    DownloadRuntime := ${includeRuntime ? "False" : "not RuntimeIsCurrent"};`,
-    ...(includeRuntime
-      ? []
-      : [
-          "    if DownloadRuntime then",
-          `      DownloadPage.Add('${escapePascalString(runtimeUrl)}', '${runtimeManifest.assetName}', '${runtimeManifest.sha256}');`
-        ]),
-    "    if DownloadRuntime then",
-    "    begin",
-    "      DownloadPage.Show;",
-    "      try",
-    "        try",
-    "          DownloadPage.Download;",
-    "          Result := True;",
-    "        except",
-    "          if DownloadPage.AbortedByUser then",
-    "            Log('Download aborted by user.')",
-    "          else",
-    "          begin",
-    "            Error := Format('%s: %s', [DownloadPage.LastBaseNameOrUrl, GetExceptionMessage]);",
-    "            SuppressibleMsgBox(AddPeriod(Error), mbCriticalError, MB_OK, IDOK);",
-    "          end;",
-    "          Result := False;",
-    "        end;",
-    "      finally",
-    "        DownloadPage.Hide;",
-    "      end;",
-    "    end",
-    "    else",
-    "      Result := True;",
-    "  end",
-    "  else",
-    "    Result := True;",
-    "end;",
-    "",
-    "function PrepareToInstall(var NeedsRestart: Boolean): String;",
-    "begin",
-    "  Result := '';",
-    "end;",
-    "",
     "procedure InstallAudioSeparator;",
     "var",
     "  ResultCode: Integer;",
     "  Params: String;",
-    "  RuntimeInstaller: String;",
     "begin",
-    "  if DownloadRuntime then",
-    "  begin",
-    `    RuntimeInstaller := ExpandConstant('{tmp}\\${runtimeManifest.assetName}');`,
-    "    if not Exec(RuntimeInstaller, '/SILENT /SUPPRESSMSGBOXES /NORESTART /CURRENTUSER', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then",
-    "      RaiseException('Unable to start the Audio Separator private runtime installer.');",
-    "    if ResultCode <> 0 then",
-    "      RaiseException('The Audio Separator private runtime installer failed with code ' + IntToStr(ResultCode) + '.');",
-    "  end;",
-    "",
-    `  Params := '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{tmp}\\AudioSeparatorPayload\\installers\\audioseparator_install_windows_private_runtime.ps1') + '" -PayloadRoot "' + ExpandConstant('{tmp}\\AudioSeparatorPayload') + '"${includeRuntime ? "" : " -SkipRuntimeInstall"} -RuntimeVersion "${escapePascalString(runtimeManifest.version)}"';`,
+    `  Params := '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{tmp}\\AudioSeparatorPayload\\installers\\audioseparator_install_windows_private_runtime.ps1') + '" -PayloadRoot "' + ExpandConstant('{tmp}\\AudioSeparatorPayload') + '" -RuntimeVersion "${escapePascalString(version)}" -DemucsVersion "${escapePascalString(demucsVersion)}" -TorchVersion "${escapePascalString(torchVersion)}" -NumpyVersion "${escapePascalString(numpyVersion)}"';`,
     "  if not Exec(ExpandConstant('{sys}\\WindowsPowerShell\\v1.0\\powershell.exe'), Params, '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then",
     "    RaiseException('Unable to start the Audio Separator installation script.');",
     "  if ResultCode <> 0 then",
@@ -625,7 +488,7 @@ async function createUserInstaller(compilerPath, version, runtimeManifest, mode)
 
   const outputPath = path.join(releasesDir, `${outputBaseName}.exe`);
   const sha256 = await hashFile(outputPath);
-  process.stdout.write(`${includeRuntime ? "Full" : "Light"} Windows installer created at ${outputPath}\nSHA-256: ${sha256}\n`);
+  process.stdout.write(`Full Windows installer created at ${outputPath}\nSHA-256: ${sha256}\n`);
 }
 
 async function main() {
@@ -633,40 +496,23 @@ async function main() {
   if (process.platform !== "win32") {
     throw new Error("Windows EXE packaging must run on Windows or a Windows GitHub Actions runner.");
   }
-  if (fullOnly && lightOnly) {
-    throw new Error("Use only one of AUDIOSEP_WINDOWS_FULL_ONLY=1 or AUDIOSEP_WINDOWS_LIGHT_ONLY=1.");
-  }
-
   const version = await readPackageVersion();
   if (!version) {
     throw new Error("package.json does not contain a version.");
   }
 
   if (!reuseStaging) {
-    await rm(stagingRoot, { recursive: true, force: true });
+    // // Preserve downloaded archives while rebuilding every generated payload from scratch.
+    await rm(payloadRoot, { recursive: true, force: true });
+    await rm(installerRoot, { recursive: true, force: true });
   }
   await mkdir(downloadsDir, { recursive: true });
   await mkdir(releasesDir, { recursive: true });
   await copyExtensionPayload();
 
-  const runtimeManifest = await readRuntimeManifest();
-  if (!runtimeManifest.version || !runtimeManifest.releaseTag || !runtimeManifest.assetName) {
-    throw new Error(`${runtimeManifestPath} must define version, releaseTag, and assetName.`);
-  }
-
-  await prepareRuntimePayload(runtimeManifest);
+  await prepareRuntimePayload(version);
   const compilerPath = await prepareInnoCompiler();
-  const finalizedManifest = await createRuntimeInstaller(compilerPath, runtimeManifest);
-
-  if (!lightOnly) {
-    await createUserInstaller(compilerPath, version, finalizedManifest, "full");
-  }
-  if (!fullOnly) {
-    if (!finalizedManifest.sha256) {
-      throw new Error("Light installer requires a runtime SHA-256 in installers/windows-runtime.json.");
-    }
-    await createUserInstaller(compilerPath, version, finalizedManifest, "light");
-  }
+  await createUserInstaller(compilerPath, version);
 }
 
 main().catch((error) => {

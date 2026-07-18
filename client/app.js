@@ -13,7 +13,7 @@
     const GITHUB_REPO = 'CyrilG93/PremierePro-AudioSeparator';
     const PRODUCT_PAGE_URL = 'https://www.cyrilplugin.com/audio-separator';
     // Keep the UI fallback in sync when the manifest cannot be read from CEP.
-    let CURRENT_VERSION = '2.4.7'; // Will be updated from manifest
+    let CURRENT_VERSION = '2.4.8'; // Will be updated from manifest
     const CEP_THEME_COLOR_CHANGED_EVENT = 'com.adobe.csxs.events.ThemeColorChanged';
 
     // Language management - Default to English on first launch
@@ -768,8 +768,10 @@
         // Add processing mode options
         switch (processingMode) {
             case 'fast':
-                args.push('--quantized');  // 30-40% faster
-                args.push('--segment', '7');  // Less RAM, compatible with all models
+                // // Use only Demucs-supported inference settings to reduce processing time.
+                args.push('--shifts', '0');
+                args.push('--overlap', '0.1');
+                args.push('--segment', '7');
                 addLogMessage(t('modeFastLog'));
                 break;
             case 'quality':
@@ -810,7 +812,9 @@
             ...process.env,
             // Force UTF-8 encoding for Python to handle Unicode filenames on Windows
             PYTHONIOENCODING: 'utf-8',
-            PYTHONUTF8: '1'
+            PYTHONUTF8: '1',
+            // // Hugging Face falls back safely when Windows symlinks are unavailable; hide its noisy warning.
+            HF_HUB_DISABLE_SYMLINKS_WARNING: '1'
         };
 
         // Add FFmpeg to PATH if configured

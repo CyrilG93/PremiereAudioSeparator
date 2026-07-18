@@ -47,6 +47,11 @@ audiosep_run_as_user() {
   fi
 }
 
+audiosep_validate_python_runtime() {
+  # // Confirm pinned versions and verify that Demucs can write a real WAV without TorchCodec.
+  audiosep_run_as_user "$1" -c "from importlib.metadata import version; from pathlib import Path; import os, tempfile, numpy, torch; from demucs.audio import save_audio; assert version('demucs') == '${AUDIOSEP_DEMUCS_VERSION}'; assert torch.__version__.split('+')[0] == '${AUDIOSEP_TORCH_VERSION}'; assert numpy.__version__ == '${AUDIOSEP_NUMPY_VERSION}'; fd, name = tempfile.mkstemp(suffix='.wav'); os.close(fd); os.unlink(name); output = Path(name); save_audio(torch.zeros(2, 4410), output, 44100); assert output.stat().st_size > 44; output.unlink()" >/dev/null
+}
+
 audiosep_json_escape() {
   # // Escape filesystem paths before writing the JSON file consumed by the CEP panel.
   printf "%s" "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
@@ -92,7 +97,7 @@ audiosep_runtime_is_current() {
   [ "$(tr -d '\r\n' <"${version_file}")" = "${AUDIOSEP_RUNTIME_VERSION}" ] || return 1
   [ -x "${runtime_dir}/python/bin/python3" ] || return 1
   [ -x "${runtime_dir}/ffmpeg/bin/ffmpeg" ] || return 1
-  audiosep_run_as_user "${runtime_dir}/python/bin/python3" -c "import demucs, torch; print(torch.__version__)" >/dev/null 2>&1 || return 1
+  audiosep_validate_python_runtime "${runtime_dir}/python/bin/python3" >/dev/null 2>&1 || return 1
   audiosep_run_as_user "${runtime_dir}/ffmpeg/bin/ffmpeg" -version >/dev/null 2>&1 || return 1
   return 0
 }
@@ -141,7 +146,7 @@ audiosep_install_runtime() {
 audiosep_validate_runtime() {
   # // Validate the runtime tools before exposing their paths to the extension.
   runtime_dir="$1"
-  audiosep_run_as_user "${runtime_dir}/python/bin/python3" -c "import demucs, torch; print('demucs runtime ok', torch.__version__)" >/dev/null
+  audiosep_validate_python_runtime "${runtime_dir}/python/bin/python3"
   audiosep_run_as_user "${runtime_dir}/ffmpeg/bin/ffmpeg" -version >/dev/null
 }
 

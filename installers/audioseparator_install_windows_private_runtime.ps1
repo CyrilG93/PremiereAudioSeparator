@@ -1,7 +1,9 @@
 param(
   [string]$PayloadRoot = "",
-  [switch]$SkipRuntimeInstall,
-  [string]$RuntimeVersion = "1"
+  [string]$RuntimeVersion = "1",
+  [string]$DemucsVersion = "4.1.0",
+  [string]$TorchVersion = "2.13.0",
+  [string]$NumpyVersion = "2.4.6"
 )
 
 $ErrorActionPreference = "Stop"
@@ -91,7 +93,7 @@ function Test-AudioSepRuntimeCommand {
 }
 
 function Test-AudioSepPrivateRuntime {
-  # // Validate all private tools before writing their paths to the CEP config file.
+  # // Validate pinned packages, real WAV output, and all tools before writing the CEP config file.
   $pythonPath = Join-Path $runtimeDir "python\python.exe"
   $ffmpegPath = Join-Path $runtimeDir "ffmpeg\bin\ffmpeg.exe"
   $ffprobePath = Join-Path $runtimeDir "ffmpeg\bin\ffprobe.exe"
@@ -103,7 +105,24 @@ function Test-AudioSepPrivateRuntime {
     Unblock-File -LiteralPath $tool -ErrorAction SilentlyContinue
   }
 
-  Test-AudioSepRuntimeCommand -ToolName "Private Python" -ToolPath $pythonPath -Arguments @("-c", "import demucs, torch; print('demucs runtime ok', torch.__version__)")
+  $smokeCode = @(
+    "from importlib.metadata import version",
+    "from pathlib import Path",
+    "import os, tempfile, numpy, torch",
+    "from demucs.audio import save_audio",
+    "assert version('demucs') == '$DemucsVersion'",
+    "assert torch.__version__.split('+')[0] == '$TorchVersion'",
+    "assert numpy.__version__ == '$NumpyVersion'",
+    "fd, name = tempfile.mkstemp(suffix='.wav')",
+    "os.close(fd)",
+    "os.unlink(name)",
+    "output = Path(name)",
+    "save_audio(torch.zeros(2, 4410), output, 44100)",
+    "assert output.stat().st_size > 44",
+    "output.unlink()",
+    "print('demucs runtime and WAV output ok', version('demucs'), torch.__version__)"
+  ) -join "; "
+  Test-AudioSepRuntimeCommand -ToolName "Private Python" -ToolPath $pythonPath -Arguments @("-c", $smokeCode)
   Test-AudioSepRuntimeCommand -ToolName "Private FFmpeg" -ToolPath $ffmpegPath -Arguments @("-version")
   Test-AudioSepRuntimeCommand -ToolName "Private FFprobe" -ToolPath $ffprobePath -Arguments @("-version")
 }
@@ -142,12 +161,7 @@ Copy-AudioSepDirectoryFresh -Source $sourceDir -Destination $destDir
 Write-AudioSepInfo "Audio Separator installed to $destDir."
 Enable-AudioSepCepDebugMode
 
-if (-not $SkipRuntimeInstall) {
-  Install-AudioSepPrivateRuntime
-} else {
-  Write-AudioSepInfo "Keeping the compatible private runtime already installed."
-}
-
+Install-AudioSepPrivateRuntime
 Test-AudioSepPrivateRuntime
 Write-AudioSepRuntimeVersion
 Write-AudioSepExtensionConfig
