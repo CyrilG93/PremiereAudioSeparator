@@ -475,7 +475,7 @@ async function validateInstallerContents(outputPath) {
       "set -eu",
       `archive=${shellQuote(expandedScripts)}`,
       `content=${shellQuote(extractedScripts)}`,
-      '(cd "$content" && gzip -dc "$archive" | cpio -idm >/dev/null 2>&1)',
+      'if [ -d "$archive" ]; then ditto "$archive" "$content"; else (cd "$content" && gzip -dc "$archive" | cpio -idm >/dev/null 2>&1); fi',
       'if find "$content" -name "._*" -print -quit | grep -q .; then echo "AppleDouble metadata found in PKG." >&2; exit 1; fi',
       'if find "$content" -name "UPDATE_DEPENDENCIES.sh" -print -quit | grep -q .; then echo "Legacy updater found in PKG." >&2; exit 1; fi',
       'runtime_archive="$(find "$content/runtime" -name "*.tar.gz" -print -quit)"',
