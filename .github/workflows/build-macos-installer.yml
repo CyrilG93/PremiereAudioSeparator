@@ -1,0 +1,63 @@
+name: Build macOS Installer
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 240
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.16"
+
+      - name: Verify Apple Silicon build host
+        shell: bash
+        run: |
+          # // Refuse to package an Intel runtime under the arm64 installer name.
+          test "$(uname -m)" = "arm64"
+          xcode-select -p
+          node --version
+          uv --version
+
+      - name: Verify project
+        run: npm run verify
+
+      - name: Build unsigned arm64 installer
+        env:
+          AUDIOSEP_MAC_ARCH: arm64
+          AUDIOSEP_BUILD_JOBS: "3"
+        run: npm run package:macos-pkg
+
+      - name: Record installer checksum
+        shell: bash
+        run: |
+          # // Confirm the expected Full PKG exists and expose its checksum in the workflow summary.
+          version="$(node -p "require('./package.json').version")"
+          installer="Releases/AudioSeparator-v${version}-macOS-Installer-arm64.pkg"
+          test -f "$installer"
+          file "$installer"
+          checksum="$(shasum -a 256 "$installer" | awk '{print $1}')"
+          printf '### Audio Separator macOS arm64\n\n- File: `%s`\n- SHA-256: `%s`\n' "$(basename "$installer")" "$checksum" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload macOS Full installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: AudioSeparator-macOS-arm64-Installer
+          path: Releases/*-macOS-Installer-arm64.pkg
+          if-no-files-found: error
+          retention-days: 30

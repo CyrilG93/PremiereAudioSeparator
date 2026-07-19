@@ -54,6 +54,8 @@ npm run verify
 npm run package:macos-pkg
 ```
 
+The same unsigned arm64 PKG can be built from **GitHub Actions > Build macOS Installer > Run workflow**.
+
 Generated installers are written to `Releases/`. See `docs/windows-installer-build.md` for Windows build details.
 
 ---
@@ -105,6 +107,8 @@ Le packaging macOS nécessite un Mac Apple Silicon, Node.js, `uv` et les Xcode C
 npm run verify
 npm run package:macos-pkg
 ```
+
+Le même PKG arm64 non signé peut être généré depuis **GitHub Actions > Build macOS Installer > Run workflow**.
 
 Les installateurs générés sont écrits dans `Releases/`. Consultez `docs/windows-installer-build.md` pour les détails du build Windows.
 
