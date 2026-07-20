@@ -170,7 +170,7 @@ async function lockEmbeddedPythonRuntime(runtimePythonDir) {
 }
 
 async function prunePythonRuntime(runtimePythonDir) {
-  // // Remove development artifacts while preserving runtime DLLs, modules, and executables.
+  // // Remove development and diagnostic-only artifacts while preserving Demucs runtime DLLs and modules.
   await runCommand("powershell", [
     "-NoProfile",
     "-ExecutionPolicy",
@@ -180,7 +180,9 @@ async function prunePythonRuntime(runtimePythonDir) {
       `$root = ${JSON.stringify(runtimePythonDir)};`,
       "Get-ChildItem -LiteralPath $root -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in '.lib', '.pdb' } | Remove-Item -Force;",
       "Get-ChildItem -LiteralPath $root -Recurse -Directory -Filter __pycache__ -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue;",
-      "Remove-Item -LiteralPath (Join-Path $root 'Lib\\site-packages\\torch\\include') -Recurse -Force -ErrorAction SilentlyContinue"
+      "Remove-Item -LiteralPath (Join-Path $root 'Lib\\site-packages\\torch\\include') -Recurse -Force -ErrorAction SilentlyContinue;",
+      // // Dynolog is a PyTorch diagnostic utility; its embedded third-party test licenses are never used by Demucs.
+      "Remove-Item -LiteralPath (Join-Path $root 'Lib\\site-packages\\torch\\bin\\dynolog') -Recurse -Force -ErrorAction SilentlyContinue"
     ].join(" ")
   ]);
 }
@@ -346,6 +348,28 @@ async function copyExtensionPayload() {
   await cp(path.join(projectRoot, "README.md"), path.join(payloadRoot, "README.md"));
 }
 
+async function validateInstallerPayloadPaths() {
+  // // Inno extracts into a legacy MAX_PATH-limited temporary directory on many Windows PCs.
+  const runtimeFiles = await new Promise((resolve, reject) => {
+    const child = spawn("powershell", [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-Command",
+      `Get-ChildItem -LiteralPath ${JSON.stringify(runtimeRoot)} -Recurse -File | ForEach-Object { $_.FullName.Substring(${JSON.stringify(runtimeRoot)}.Length + 1) }`
+    ], { cwd: projectRoot, stdio: ["ignore", "pipe", "inherit"] });
+    let output = "";
+    child.stdout.on("data", (chunk) => { output += chunk; });
+    child.on("error", reject);
+    child.on("exit", (code) => code === 0 ? resolve(output.split(/\r?\n/).filter(Boolean)) : reject(new Error(`Unable to inspect runtime paths (code ${code}).`)));
+  });
+  const longestRelativePath = runtimeFiles.reduce((longest, filePath) => Math.max(longest, filePath.length), 0);
+  // // Keep room for a long user profile and Inno's is-XXXXXXXX.tmp extraction directory.
+  if (longestRelativePath > 170) {
+    throw new Error(`Installer runtime path is too deep (${longestRelativePath} characters relative); it may exceed Windows MAX_PATH during extraction.`);
+  }
+}
+
 async function findExistingInnoCompiler() {
   // // Prefer an explicit compiler path, then common local Inno Setup locations.
   const candidates = [
@@ -441,11 +465,12 @@ async function createUserInstaller(compilerPath, version) {
     `OutputBaseFilename=${outputBaseName}`,
     "",
     "[Files]",
-    `Source: "${escapeInnoString(path.join(payloadRoot, "README.md"))}"; DestDir: "{tmp}\\AudioSeparatorPayload"; Flags: ignoreversion`,
-    `Source: "${escapeInnoString(path.join(payloadRoot, "dist", "PremierePro-AudioSeparator", "*"))}"; DestDir: "{tmp}\\AudioSeparatorPayload\\dist\\PremierePro-AudioSeparator"; Flags: recursesubdirs createallsubdirs ignoreversion`,
-    `Source: "${escapeInnoString(path.join(payloadRoot, "installers", "audioseparator_install_windows_private_runtime.ps1"))}"; DestDir: "{tmp}\\AudioSeparatorPayload\\installers"; Flags: ignoreversion`,
-    `Source: "${escapeInnoString(path.join(runtimeRoot, "*"))}"; DestDir: "{tmp}\\AudioSeparatorPayload\\runtime"; Flags: recursesubdirs createallsubdirs ignoreversion`,
-    `Source: "${escapeInnoString(path.join(payloadRoot, "README.md"))}"; DestDir: "{tmp}\\AudioSeparatorPayload"; DestName: "install-ready.txt"; Flags: ignoreversion; AfterInstall: InstallAudioSeparator`,
+    // // Use single-letter temporary directories: Setup's own temp root can be long on Windows profiles.
+    `Source: "${escapeInnoString(path.join(payloadRoot, "README.md"))}"; DestDir: "{tmp}\\a"; Flags: ignoreversion`,
+    `Source: "${escapeInnoString(path.join(payloadRoot, "dist", "PremierePro-AudioSeparator", "*"))}"; DestDir: "{tmp}\\a\\e"; Flags: recursesubdirs createallsubdirs ignoreversion`,
+    `Source: "${escapeInnoString(path.join(payloadRoot, "installers", "audioseparator_install_windows_private_runtime.ps1"))}"; DestDir: "{tmp}\\a"; DestName: "i.ps1"; Flags: ignoreversion`,
+    `Source: "${escapeInnoString(path.join(runtimeRoot, "*"))}"; DestDir: "{tmp}\\a\\r"; Flags: recursesubdirs createallsubdirs ignoreversion`,
+    `Source: "${escapeInnoString(path.join(payloadRoot, "README.md"))}"; DestDir: "{tmp}\\a"; DestName: "ok.txt"; Flags: ignoreversion; AfterInstall: InstallAudioSeparator`,
     "",
     "[Code]",
     "var",
@@ -471,7 +496,7 @@ async function createUserInstaller(compilerPath, version) {
     "  ResultCode: Integer;",
     "  Params: String;",
     "begin",
-    `  Params := '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{tmp}\\AudioSeparatorPayload\\installers\\audioseparator_install_windows_private_runtime.ps1') + '" -PayloadRoot "' + ExpandConstant('{tmp}\\AudioSeparatorPayload') + '" -RuntimeVersion "${escapePascalString(version)}" -DemucsVersion "${escapePascalString(demucsVersion)}" -TorchVersion "${escapePascalString(torchVersion)}" -NumpyVersion "${escapePascalString(numpyVersion)}"';`,
+    `  Params := '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{tmp}\\a\\i.ps1') + '" -PayloadRoot "' + ExpandConstant('{tmp}\\a') + '" -RuntimeVersion "${escapePascalString(version)}" -DemucsVersion "${escapePascalString(demucsVersion)}" -TorchVersion "${escapePascalString(torchVersion)}" -NumpyVersion "${escapePascalString(numpyVersion)}"';`,
     "  if not Exec(ExpandConstant('{sys}\\WindowsPowerShell\\v1.0\\powershell.exe'), Params, '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then",
     "    RaiseException('Unable to start the Audio Separator installation script.');",
     "  if ResultCode <> 0 then",
@@ -511,6 +536,7 @@ async function main() {
   await copyExtensionPayload();
 
   await prepareRuntimePayload(version);
+  await validateInstallerPayloadPaths();
   const compilerPath = await prepareInnoCompiler();
   await createUserInstaller(compilerPath, version);
 }

@@ -1,4 +1,4 @@
-# Audio Separator v2.4.12 - Premiere Pro Plugin
+# Audio Separator v2.4.13 - Premiere Pro Plugin
 
 Audio Separator separates the audio from a Premiere Pro timeline clip into vocals and instrumental stems, or into vocals, drums, bass and other stems. Processing runs locally on your computer with Demucs.
 
@@ -29,8 +29,8 @@ Download Audio Separator from the [product page](https://www.cyrilplugin.com/aud
 
 The current installer names are:
 
-- macOS Apple Silicon: `AudioSeparator-v2.4.12-macOS-Installer-arm64.pkg`
-- Windows 64-bit: `AudioSeparator-v2.4.12-Windows-Full-Installer.exe`
+- macOS Apple Silicon: `AudioSeparator-v2.4.13-macOS-Installer-arm64.pkg`
+- Windows 64-bit: `AudioSeparator-v2.4.13-Windows-Full-Installer.exe`
 
 ### Windows
 

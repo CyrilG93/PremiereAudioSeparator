@@ -63,6 +63,14 @@ async function main() {
   }
   assertCondition(windowsPackage.includes("Windows-Full-Installer"), "Windows package must create a Full installer.");
   assertCondition(
+    windowsPackage.includes('DestDir: "{tmp}\\\\a\\\\r"') && windowsPackage.includes("{tmp}\\\\a\\\\i.ps1"),
+    "Windows installer must use short temporary payload paths."
+  );
+  assertCondition(
+    windowsPackage.includes("torch\\\\bin\\\\dynolog") && windowsPackage.includes("validateInstallerPayloadPaths"),
+    "Windows package must prune Dynolog and validate runtime extraction paths."
+  );
+  assertCondition(
     windowsPackage.includes('for (const fileName of [".debug", "README.md"])'),
     "Windows installer payload must exclude the legacy updater."
   );

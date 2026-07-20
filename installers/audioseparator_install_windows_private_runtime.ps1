@@ -15,10 +15,11 @@ if (-not $PayloadRoot) {
 }
 $PayloadRoot = [System.IO.Path]::GetFullPath($PayloadRoot)
 
-$sourceDir = Join-Path $PayloadRoot "dist\PremierePro-AudioSeparator"
+# // The EXE uses short temporary names to stay below Windows MAX_PATH while extracting the PyTorch runtime.
+$sourceDir = Join-Path $PayloadRoot "e"
 $destDir = Join-Path $env:APPDATA "Adobe\CEP\extensions\PremierePro-AudioSeparator"
 $runtimeDir = Join-Path $env:LOCALAPPDATA "PremierePro-AudioSeparator\runtime"
-$payloadRuntimeDir = Join-Path $PayloadRoot "runtime"
+$payloadRuntimeDir = Join-Path $PayloadRoot "r"
 $runtimeVersionFile = Join-Path $runtimeDir ".audioseparator-runtime-version"
 $configFile = Join-Path $destDir "config.json"
 
