@@ -180,11 +180,23 @@ async function prunePythonRuntime(runtimePythonDir) {
       `$root = ${JSON.stringify(runtimePythonDir)};`,
       "Get-ChildItem -LiteralPath $root -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in '.lib', '.pdb' } | Remove-Item -Force;",
       "Get-ChildItem -LiteralPath $root -Recurse -Directory -Filter __pycache__ -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue;",
-      "Remove-Item -LiteralPath (Join-Path $root 'Lib\\site-packages\\torch\\include') -Recurse -Force -ErrorAction SilentlyContinue;",
-      // // Dynolog is a PyTorch diagnostic utility; its embedded third-party test licenses are never used by Demucs.
-      "Remove-Item -LiteralPath (Join-Path $root 'Lib\\site-packages\\torch\\bin\\dynolog') -Recurse -Force -ErrorAction SilentlyContinue"
+      "Remove-Item -LiteralPath (Join-Path $root 'Lib\\site-packages\\torch\\include') -Recurse -Force -ErrorAction SilentlyContinue"
     ].join(" ")
   ]);
+
+  // // Preserve PyTorch third-party license notices in one short-path ZIP instead of shipping their deeply nested source tree.
+  const pythonExe = path.join(runtimePythonDir, "python.exe");
+  const licenseArchiveCode = [
+    "import shutil",
+    "from pathlib import Path",
+    `root = Path(${JSON.stringify(runtimePythonDir)}) / 'Lib' / 'site-packages'`,
+    "for dist_info in root.glob('torch-*.dist-info'):",
+    "    licenses = dist_info / 'licenses'",
+    "    if licenses.is_dir():",
+    "        shutil.make_archive(str(dist_info / 'third-party-licenses'), 'zip', root_dir=licenses)",
+    "        shutil.rmtree(licenses)"
+  ].join("\n");
+  await runCommand(pythonExe, ["-c", licenseArchiveCode], { env: privatePythonEnv });
 }
 
 async function preparePythonRuntime() {

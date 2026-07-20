@@ -67,8 +67,8 @@ async function main() {
     "Windows installer must use short temporary payload paths."
   );
   assertCondition(
-    windowsPackage.includes("torch\\\\bin\\\\dynolog") && windowsPackage.includes("validateInstallerPayloadPaths"),
-    "Windows package must prune Dynolog and validate runtime extraction paths."
+    windowsPackage.includes("third-party-licenses") && windowsPackage.includes("validateInstallerPayloadPaths"),
+    "Windows package must archive deep PyTorch license trees and validate runtime extraction paths."
   );
   assertCondition(
     windowsPackage.includes('for (const fileName of [".debug", "README.md"])'),
