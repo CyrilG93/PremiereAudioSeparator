@@ -2,8 +2,6 @@
 
 Audio Separator separates an audio clip into stems directly from Adobe Premiere Pro. It can create vocals/instrumental stems or four stems: vocals, drums, bass and other.
 
-**[English](#english)** | **[Français](#français)**
-
 ---
 
 # English
@@ -57,60 +55,6 @@ npm run package:macos-pkg
 The same unsigned arm64 PKG can be built from **GitHub Actions > Build macOS Installer > Run workflow**.
 
 Generated installers are written to `Releases/`. See `docs/windows-installer-build.md` for Windows build details.
-
----
-
-# Français
-
-## Fonctionnalités
-
-- Séparation en 2 stems ou 4 stems avec Demucs.
-- Modes de traitement rapide, équilibré et qualité.
-- Pourcentage de progression global sur toutes les passes des modèles Demucs.
-- Sortie MP3, WAV ou FLAC.
-- Import automatique des stems générés dans Premiere Pro.
-- Interface et alertes localisées.
-- Couleurs adaptées aux thèmes clair et sombre de Premiere Pro.
-
-## Installation
-
-Téléchargez l'installateur unifié adapté à votre plateforme :
-
-- macOS Apple Silicon : `AudioSeparator-v2.4.12-macOS-Installer-arm64.pkg`
-- Windows 64 bits : `AudioSeparator-v2.4.12-Windows-Full-Installer.exe`
-
-L'installateur inclut l'extension Premiere Pro et un runtime privé contenant Python 3.11.8, Demucs 4.1.0, PyTorch 2.13.0 et FFmpeg. Il n'est pas nécessaire d'installer Python, FFmpeg ou Node.js séparément.
-
-Les installateurs ne sont pas encore signés :
-
-- Sous Windows, sélectionnez **Informations complémentaires > Exécuter quand même** si Microsoft Defender SmartScreen apparaît.
-- Sous macOS, faites un Ctrl-clic sur le PKG, choisissez **Ouvrir**, puis confirmez. Si nécessaire, autorisez-le depuis **Réglages Système > Confidentialité et sécurité**.
-
-Après l'installation, redémarrez Premiere Pro puis ouvrez **Fenêtre > Extensions > Audio Separator**.
-
-La première utilisation de chaque modèle Demucs nécessite une connexion internet pour télécharger ses fichiers. Ils sont ensuite conservés localement pour les utilisations hors ligne.
-
-Cliquez sur le badge de version dans l'en-tête du panneau pour ouvrir la page produit Audio Separator.
-
-## Packaging développeur
-
-Le packaging Windows nécessite Windows, Node.js et une connexion internet. Inno Setup est téléchargé automatiquement s'il n'est pas déjà installé :
-
-```powershell
-npm.cmd run verify
-npm.cmd run package:windows-exe
-```
-
-Le packaging macOS nécessite un Mac Apple Silicon, Node.js, `uv` et les Xcode Command Line Tools :
-
-```bash
-npm run verify
-npm run package:macos-pkg
-```
-
-Le même PKG arm64 non signé peut être généré depuis **GitHub Actions > Build macOS Installer > Run workflow**.
-
-Les installateurs générés sont écrits dans `Releases/`. Consultez `docs/windows-installer-build.md` pour les détails du build Windows.
 
 ---
 
