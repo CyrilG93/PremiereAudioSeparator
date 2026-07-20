@@ -1,6 +1,6 @@
 {
   "name": "premiere-pro-audio-separator",
-  "version": "2.4.11",
+  "version": "2.4.12",
   "description": "Professional Adobe Premiere Pro plugin to separate audio tracks into stems (vocals, instrumental, drums, bass) using AI-powered Demucs technology",
   "main": "client/index.html",
   "scripts": {

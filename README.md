@@ -1,4 +1,4 @@
-# Audio Separator v2.4.11 - Premiere Pro Plugin
+# Audio Separator v2.4.12 - Premiere Pro Plugin
 
 Audio Separator separates an audio clip into stems directly from Adobe Premiere Pro. It can create vocals/instrumental stems or four stems: vocals, drums, bass and other.
 
@@ -22,8 +22,8 @@ Audio Separator separates an audio clip into stems directly from Adobe Premiere 
 
 Download the unified installer for your platform:
 
-- macOS Apple Silicon: `AudioSeparator-v2.4.11-macOS-Installer-arm64.pkg`
-- Windows 64-bit: `AudioSeparator-v2.4.11-Windows-Full-Installer.exe`
+- macOS Apple Silicon: `AudioSeparator-v2.4.12-macOS-Installer-arm64.pkg`
+- Windows 64-bit: `AudioSeparator-v2.4.12-Windows-Full-Installer.exe`
 
 The installer includes the Premiere Pro extension and a private runtime with Python 3.11.8, Demucs 4.1.0, PyTorch 2.13.0 and FFmpeg. Python, FFmpeg and Node.js do not need to be installed separately.
 
@@ -76,8 +76,8 @@ Generated installers are written to `Releases/`. See `docs/windows-installer-bui
 
 Téléchargez l'installateur unifié adapté à votre plateforme :
 
-- macOS Apple Silicon : `AudioSeparator-v2.4.11-macOS-Installer-arm64.pkg`
-- Windows 64 bits : `AudioSeparator-v2.4.11-Windows-Full-Installer.exe`
+- macOS Apple Silicon : `AudioSeparator-v2.4.12-macOS-Installer-arm64.pkg`
+- Windows 64 bits : `AudioSeparator-v2.4.12-Windows-Full-Installer.exe`
 
 L'installateur inclut l'extension Premiere Pro et un runtime privé contenant Python 3.11.8, Demucs 4.1.0, PyTorch 2.13.0 et FFmpeg. Il n'est pas nécessaire d'installer Python, FFmpeg ou Node.js séparément.
 
@@ -114,7 +114,7 @@ Les installateurs générés sont écrits dans `Releases/`. Consultez `docs/wind
 
 ---
 
-**Version**: 2.4.11
+**Version**: 2.4.12
 **Author**: Cyril V
 
 ## Changelog

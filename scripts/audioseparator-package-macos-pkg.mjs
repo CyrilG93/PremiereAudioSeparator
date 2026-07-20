@@ -70,6 +70,37 @@ function runCommand(command, args, options = {}) {
   });
 }
 
+function captureCommand(command, args, options = {}) {
+  // // Capture inspection-tool output while keeping strict exit handling for release validation.
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: options.cwd || projectRoot,
+      env: {
+        ...process.env,
+        ...(options.env || {})
+      },
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.on("error", reject);
+    child.on("exit", (code) => {
+      if (code === 0) {
+        resolve(stdout);
+        return;
+      }
+      reject(new Error(`${command} exited with code ${code}: ${stderr.trim()}`));
+    });
+  });
+}
+
 async function pathExists(targetPath) {
   // // Probe optional staging paths without treating normal cache misses as failures.
   try {
@@ -263,6 +294,7 @@ async function preparePrivateFfmpeg() {
     "--enable-static",
     "--enable-ffmpeg",
     "--enable-ffprobe",
+    "--disable-autodetect",
     "--disable-gpl",
     "--disable-nonfree"
   ];
@@ -286,8 +318,30 @@ async function preparePrivateFfmpeg() {
   await rm(path.join(installDir, "include"), { recursive: true, force: true });
   await rm(path.join(installDir, "lib"), { recursive: true, force: true });
   await rm(path.join(installDir, "share"), { recursive: true, force: true });
+  await validatePortableMacBinary(path.join(installDir, "bin", "ffmpeg"));
+  await validatePortableMacBinary(path.join(installDir, "bin", "ffprobe"));
   await runCommand(path.join(installDir, "bin", "ffmpeg"), ["-version"]);
   await runCommand(path.join(installDir, "bin", "ffprobe"), ["-version"]);
+}
+
+async function validatePortableMacBinary(targetPath) {
+  // // Reject build-host package-manager libraries that would break FFmpeg on a clean customer Mac.
+  const output = await captureCommand("/usr/bin/otool", ["-L", targetPath]);
+  const dependencies = output
+    .split(/\r?\n/)
+    .slice(1)
+    .map((line) => line.trim().split(" (compatibility version")[0])
+    .filter(Boolean);
+  const unsupported = dependencies.filter(
+    (dependency) =>
+      !dependency.startsWith("/System/Library/") &&
+      !dependency.startsWith("/usr/lib/")
+  );
+  if (unsupported.length > 0) {
+    throw new Error(
+      `${path.basename(targetPath)} contains non-system dynamic dependencies:\n${unsupported.join("\n")}`
+    );
+  }
 }
 
 async function prepareRuntimePayload(runtimeVersion) {

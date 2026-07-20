@@ -70,6 +70,10 @@ async function main() {
     macPackage.includes('for (const fileName of [".debug", "README.md"])'),
     "macOS installer payload must exclude the legacy updater."
   );
+  assertCondition(
+    macPackage.includes('"--disable-autodetect"') && macPackage.includes("validatePortableMacBinary"),
+    "macOS FFmpeg builds must reject non-system dynamic dependencies."
+  );
 
   // // Pin the runtime versions on both platforms so rebuilds cannot silently drift.
   for (const [name, contents] of [

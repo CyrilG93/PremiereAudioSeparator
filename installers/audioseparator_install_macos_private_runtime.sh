@@ -59,8 +59,10 @@ audiosep_json_escape() {
 
 audiosep_install_extension() {
   # // Replace the user-level CEP extension with the payload shipped in the installer.
-  source_dir="${AUDIOSEP_PAYLOAD_ROOT}/dist/PremierePro-AudioSeparator"
-  dest_dir="${AUDIOSEP_HOME}/Library/Application Support/Adobe/CEP/extensions/PremierePro-AudioSeparator"
+  local source_dir="${AUDIOSEP_PAYLOAD_ROOT}/dist/PremierePro-AudioSeparator"
+  local dest_dir="${AUDIOSEP_HOME}/Library/Application Support/Adobe/CEP/extensions/PremierePro-AudioSeparator"
+  local replacement_dir
+  local old_dir
   if [ ! -d "${source_dir}" ]; then
     echo "Extension payload is missing: ${source_dir}" >&2
     exit 1
@@ -81,7 +83,7 @@ audiosep_install_extension() {
 
 audiosep_enable_cep_debug_mode() {
   # // Enable unsigned CEP extensions for recent Adobe hosts in the active user's preferences.
-  csxs_version=7
+  local csxs_version=7
   while [ "${csxs_version}" -le 20 ]; do
     audiosep_run_as_user defaults write "com.adobe.CSXS.${csxs_version}" PlayerDebugMode -string "1" >/dev/null 2>&1 || true
     csxs_version=$((csxs_version + 1))
@@ -91,8 +93,8 @@ audiosep_enable_cep_debug_mode() {
 
 audiosep_runtime_is_current() {
   # // Reuse an installed runtime only when version and all expected tools validate.
-  runtime_dir="$1"
-  version_file="${runtime_dir}/.audioseparator-runtime-version"
+  local runtime_dir="$1"
+  local version_file="${runtime_dir}/.audioseparator-runtime-version"
   [ -f "${version_file}" ] || return 1
   [ "$(tr -d '\r\n' <"${version_file}")" = "${AUDIOSEP_RUNTIME_VERSION}" ] || return 1
   [ -x "${runtime_dir}/python/bin/python3" ] || return 1
@@ -103,10 +105,16 @@ audiosep_runtime_is_current() {
 }
 
 audiosep_install_runtime() {
-  # // Extract the bundled private runtime after verifying its immutable SHA-256.
-  runtime_dir="$1"
+  # // Extract and validate the bundled runtime before atomically replacing an existing installation.
+  local runtime_dir="$1"
+  local temp_root
+  local archive_path="${AUDIOSEP_SCRIPT_DIR}/runtime/${AUDIOSEP_RUNTIME_ASSET_NAME}"
+  local extracted_root
+  local replacement_runtime="${runtime_dir}.new.$$"
+  local actual_hash
+  local new_runtime
+  local old_runtime
   temp_root="$(mktemp -d "${TMPDIR:-/tmp}/audioseparator-runtime.XXXXXX")"
-  archive_path="${AUDIOSEP_SCRIPT_DIR}/runtime/${AUDIOSEP_RUNTIME_ASSET_NAME}"
   extracted_root="${temp_root}/extracted"
   mkdir -p "${extracted_root}"
 
@@ -132,31 +140,39 @@ audiosep_install_runtime() {
   fi
 
   mkdir -p "$(dirname "${runtime_dir}")"
+  mv "${new_runtime}" "${replacement_runtime}"
+  chown -R "${AUDIOSEP_UID}:${AUDIOSEP_GID}" "${replacement_runtime}"
+  if ! audiosep_validate_runtime "${replacement_runtime}"; then
+    rm -rf "${replacement_runtime}" "${temp_root}"
+    echo "The bundled runtime failed validation; the existing runtime was preserved." >&2
+    exit 1
+  fi
+
   old_runtime="${runtime_dir}.old.$$"
   if [ -e "${runtime_dir}" ]; then
     mv "${runtime_dir}" "${old_runtime}"
   fi
-  mv "${new_runtime}" "${runtime_dir}"
+  mv "${replacement_runtime}" "${runtime_dir}"
   [ ! -e "${old_runtime}" ] || rm -rf "${old_runtime}"
   rm -rf "${temp_root}"
-  chown -R "${AUDIOSEP_UID}:${AUDIOSEP_GID}" "${runtime_dir}"
   echo "Private runtime installed to ${runtime_dir}."
 }
 
 audiosep_validate_runtime() {
   # // Validate the runtime tools before exposing their paths to the extension.
-  runtime_dir="$1"
-  audiosep_validate_python_runtime "${runtime_dir}/python/bin/python3"
-  audiosep_run_as_user "${runtime_dir}/ffmpeg/bin/ffmpeg" -version >/dev/null
+  local validation_runtime_dir="$1"
+  audiosep_validate_python_runtime "${validation_runtime_dir}/python/bin/python3"
+  audiosep_run_as_user "${validation_runtime_dir}/ffmpeg/bin/ffmpeg" -version >/dev/null
 }
 
 audiosep_write_extension_config() {
   # // Persist exact private-runtime paths in the config file already read by client/app.js.
-  runtime_dir="$1"
-  extension_dir="${AUDIOSEP_HOME}/Library/Application Support/Adobe/CEP/extensions/PremierePro-AudioSeparator"
-  config_file="${extension_dir}/config.json"
-  python_path="${runtime_dir}/python/bin/python3"
-  ffmpeg_path="${runtime_dir}/ffmpeg/bin/ffmpeg"
+  local runtime_dir="$1"
+  local extension_dir="${AUDIOSEP_HOME}/Library/Application Support/Adobe/CEP/extensions/PremierePro-AudioSeparator"
+  local config_file="${extension_dir}/config.json"
+  local python_path="${runtime_dir}/python/bin/python3"
+  local ffmpeg_path="${runtime_dir}/ffmpeg/bin/ffmpeg"
+  local generated_at
   generated_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
   mkdir -p "$(dirname "${config_file}")"
@@ -182,11 +198,6 @@ if [ "${AUDIOSEP_RUNTIME_ARCH}" != "$(uname -m)" ]; then
   exit 1
 fi
 
-audiosep_install_extension
-if [ "${AUDIOSEP_SKIP_CEP_DEBUG:-0}" != "1" ]; then
-  audiosep_enable_cep_debug_mode
-fi
-
 if audiosep_runtime_is_current "${AUDIOSEP_RUNTIME_DIR}"; then
   echo "Keeping the compatible private runtime already installed."
 else
@@ -196,6 +207,11 @@ fi
 audiosep_validate_runtime "${AUDIOSEP_RUNTIME_DIR}"
 printf "%s\n" "${AUDIOSEP_RUNTIME_VERSION}" >"${AUDIOSEP_RUNTIME_DIR}/.audioseparator-runtime-version"
 chown "${AUDIOSEP_UID}:${AUDIOSEP_GID}" "${AUDIOSEP_RUNTIME_DIR}/.audioseparator-runtime-version"
+
+audiosep_install_extension
+if [ "${AUDIOSEP_SKIP_CEP_DEBUG:-0}" != "1" ]; then
+  audiosep_enable_cep_debug_mode
+fi
 audiosep_write_extension_config "${AUDIOSEP_RUNTIME_DIR}"
 
 echo "Installation complete. Restart Premiere Pro, then open Window > Extensions > Audio Separator."
