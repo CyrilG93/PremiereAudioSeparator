@@ -58,9 +58,6 @@ Generated installers are written to `Releases/`. See `docs/windows-installer-bui
 
 ---
 
-**Version**: 2.4.12
-**Author**: Cyril V
-
 ## Changelog
 
 ### 2.4.2 - 2026-05-01
