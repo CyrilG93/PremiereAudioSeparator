@@ -13,7 +13,7 @@
     const GITHUB_REPO = 'CyrilG93/PremierePro-AudioSeparator';
     const PRODUCT_PAGE_URL = 'https://www.cyrilplugin.com/audio-separator';
     // Keep the UI fallback in sync when the manifest cannot be read from CEP.
-    let CURRENT_VERSION = '2.4.14'; // Will be updated from manifest
+    let CURRENT_VERSION = '2.4.15'; // Will be updated from manifest
     const CEP_THEME_COLOR_CHANGED_EVENT = 'com.adobe.csxs.events.ThemeColorChanged';
 
     // Language management - Default to English on first launch
