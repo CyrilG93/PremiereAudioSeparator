@@ -1,4 +1,4 @@
-# Audio Separator v2.4.15 - Premiere Pro Plugin
+# Audio Separator v2.5.0 - Premiere Pro Plugin
 
 Audio Separator separates the audio from a Premiere Pro timeline clip into vocals and instrumental stems, or into vocals, drums, bass and other stems. Processing runs locally on your computer with Demucs.
 
@@ -25,12 +25,12 @@ Python, Demucs, PyTorch and FFmpeg are included in the Full installer. You do no
 
 ## Installation
 
-Download Audio Separator from the [product page](https://www.cyrilplugin.com/audio-separator) or the [GitHub releases page](https://github.com/CyrilG93/PremierePro-AudioSeparator/releases).
+Download Audio Separator from the [product page](https://www.cyrilplugin.com/audio-separator) or the [GitHub releases page](https://github.com/CyrilG93/PremiereAudioSeparator/releases).
 
 The current installer names are:
 
-- macOS Apple Silicon: `AudioSeparator-v2.4.15-macOS-Installer-arm64.pkg`
-- Windows 64-bit: `AudioSeparator-v2.4.15-Windows-Full-Installer.exe`
+- macOS Apple Silicon: `AudioSeparator-v2.5.0-macOS-Installer-arm64.pkg`
+- Windows 64-bit: `AudioSeparator-v2.5.0-Windows-Full-Installer.exe`
 
 ### Windows
 
@@ -173,6 +173,11 @@ This can vary from one mix to another. Try HTDemucs Fine-tuned first, then compa
 ## Changelog
 
 This history was reconstructed from the repository tags, published GitHub releases and the changes included between public versions.
+
+### 2.5.0 - 2026-07-23
+
+- Renamed the public project and Plugin Manager entry to Premiere Audio Separator for consistent naming.
+- Updated the macOS and Windows installer packages for the public release.
 
 ### 2.4.12 - 2026-07-20
 
