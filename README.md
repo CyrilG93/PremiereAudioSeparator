@@ -177,20 +177,11 @@ This history was reconstructed from the repository tags, published GitHub releas
 ### 2.5.0 - 2026-07-23
 
 - Renamed the public project and Plugin Manager entry to Premiere Audio Separator for consistent naming.
-- Updated the macOS and Windows installer packages for the public release.
-
-### 2.4.12 - 2026-07-20
-
-- Fixed the macOS installer so its bundled FFmpeg no longer depends on Homebrew libraries.
-- The installer now validates a new runtime before replacing an existing working runtime.
-
-### 2.4.11 Beta - 2026-07-14
-
 - Introduced unified Full installers with a private Python, Demucs, PyTorch and FFmpeg runtime.
 - Added one continuous progress percentage across all passes of the selected model.
 - Added automatic Premiere Pro light and dark theme support.
 - Added a link from the version badge to the Audio Separator product page.
-- Strengthened installer and runtime validation on Windows and macOS.
+- Improved installer reliability on macOS and Windows, including portable FFmpeg on Mac and safer runtime validation.
 
 ### 2.4.2 - 2026-05-01
 
